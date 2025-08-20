@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
+
   View,
   Text,
   TextInput,
@@ -8,6 +9,8 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from "react-native";
 import { Feather, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -20,67 +23,89 @@ const HomeScreen = ({ navigation }) => {
   const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
-    const fetchEventos = async () => {
-      try {
-        const token = await AsyncStorage.getItem("userToken");
-        if (!token) {
-          navigation.navigate("Login");
-          return;
-        }
-
-        const response = await fetch(`${API_URL}/eventos`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Erro ao buscar eventos");
-        }
-
-        const data = await response.json();
-
-        const eventosFormatados = data.map((evento) => ({
-          id: evento.eventoId.toString(),
-          titulo: evento.nomeEvento,
-          subtitulo: `Organizado por ${evento.Organizador.nome}`,
-          data: formatarData(evento.dataInicio),
-          imagem: require("../imagens/branca.png"),
-          categoria: getCategoria(evento.statusEvento),
-        }));
-
-        setEventos(eventosFormatados);
-      } catch (error) {
-        console.error("Erro ao buscar eventos:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchEventos();
   }, []);
 
+  const fetchEventos = async () => {
+    try {
+      setLoading(true);
+      const token = await AsyncStorage.getItem("userToken");
+      if (!token) {
+        navigation.navigate("Login");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/eventos`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Dados recebidos do backend:", data);
+
+      const eventosFormatados = data.map((evento) => {
+        console.log("Evento:", evento);
+
+        const nomeOrganizador =
+          evento.organizador && evento.organizador.nome
+            ? evento.organizador.nome
+            : "Organizador desconhecido";
+
+        return {
+          id: evento.eventoId?.toString() || Math.random().toString(),
+          titulo: evento.nomeEvento || "Evento sem nome",
+          subtitulo: `Organizado por ${nomeOrganizador}`,
+          data: formatarData(evento.dataInicio),
+          imagem: require("../imagens/branca.png"),
+          categoria: getCategoria(evento.statusEvento),
+          status: evento.statusEvento || "ativo",
+          rawData: evento,
+        };
+      });
+
+      setEventos(eventosFormatados);
+    } catch (error) {
+      console.error("Erro ao buscar eventos:", error);
+      Alert.alert("Erro", "Não foi possível carregar os eventos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatarData = (dataString) => {
-    const meses = [
-      "JAN",
-      "FEV",
-      "MAR",
-      "ABR",
-      "MAI",
-      "JUN",
-      "JUL",
-      "AGO",
-      "SET",
-      "OUT",
-      "NOV",
-      "DEZ",
-    ];
-    const data = new Date(dataString);
-    return `${data.getDate()} ${meses[data.getMonth()]}`;
+    if (!dataString) return "Data inválida";
+
+    try {
+      const meses = [
+        "JAN",
+        "FEV",
+        "MAR",
+        "ABR",
+        "MAI",
+        "JUN",
+        "JUL",
+        "AGO",
+        "SET",
+        "OUT",
+        "NOV",
+        "DEZ",
+      ];
+      const data = new Date(dataString);
+      return `${data.getDate()} ${meses[data.getMonth()]}`;
+    } catch (error) {
+      return "Data inválida";
+    }
   };
 
   const getCategoria = (status) => {
-    switch (status) {
+    if (!status) return "Ativos";
+
+    switch (status.toUpperCase()) {
       case "CONCLUIDO":
         return "Concluídos";
       case "RASCUNHO":
@@ -97,8 +122,12 @@ const HomeScreen = ({ navigation }) => {
     >
       <Image source={item.imagem} style={styles.imagem} />
       <View style={styles.cardInfo}>
-        <Text style={styles.titulo}>{item.titulo}</Text>
-        <Text style={styles.subtitulo}>{item.subtitulo}</Text>
+        <Text style={styles.titulo} numberOfLines={1}>
+          {item.titulo}
+        </Text>
+        <Text style={styles.subtitulo} numberOfLines={1}>
+          {item.subtitulo}
+        </Text>
       </View>
       <View style={styles.dataContainer}>
         <Text style={styles.dataTexto}>{item.data}</Text>
@@ -110,15 +139,17 @@ const HomeScreen = ({ navigation }) => {
     (evento) => evento.categoria === selectedTab
   );
 
+  const eventosBusca = eventosFiltrados.filter(
+    (evento) =>
+      evento.titulo.toLowerCase().includes(searchText.toLowerCase()) ||
+      evento.subtitulo.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   if (loading) {
     return (
-      <View
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
+      <View style={[styles.container, styles.centerContainer]}>
         <ActivityIndicator size="large" color="#1400B4" />
+        <Text style={styles.carregandoTexto}>Carregando eventos...</Text>
       </View>
     );
   }
@@ -172,18 +203,35 @@ const HomeScreen = ({ navigation }) => {
       </View>
 
       <FlatList
-        data={eventosFiltrados.filter(
-          (evento) =>
-            evento.titulo.toLowerCase().includes(searchText.toLowerCase()) ||
-            evento.subtitulo.toLowerCase().includes(searchText.toLowerCase())
-        )}
+        data={eventosBusca}
         keyExtractor={(item) => item.id}
         renderItem={renderEvento}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={styles.listaContainer}
         ListEmptyComponent={
-          <Text style={{ color: "#fff", textAlign: "center", marginTop: 20 }}>
-            Nenhum evento encontrado
-          </Text>
+          <View style={styles.listaVazia}>
+            <Text style={styles.textoListaVazia}>
+              {eventos.length === 0
+                ? "Nenhum evento encontrado"
+                : `Nenhum evento encontrado em "${selectedTab}"`}
+            </Text>
+            {eventos.length === 0 && (
+              <TouchableOpacity
+                style={styles.botaoCriarEvento}
+                onPress={() => navigation.navigate("Etapa1")}
+              >
+                <Text style={styles.botaoCriarEventoTexto}>
+                  Criar Primeiro Evento
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={false}
+            onRefresh={fetchEventos}
+            colors={["#1400B4"]}
+          />
         }
       />
 
@@ -198,7 +246,7 @@ const HomeScreen = ({ navigation }) => {
           name="message-circle"
           size={24}
           color="#fff"
-          onPress={() => navigation.navigate("Chat")}
+          onPress={() => navigation.navigate("GruposScreen")}
         />
         <TouchableOpacity
           style={styles.centralButton}
@@ -219,7 +267,19 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0e0033", paddingTop: 50 },
+  container: {
+    flex: 1,
+    backgroundColor: "#0e0033",
+    paddingTop: 50,
+  },
+  centerContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  carregandoTexto: {
+    color: "#fff",
+    marginTop: 10,
+  },
 
   logoContainer: {
     alignItems: "center",
@@ -238,6 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    marginBottom: 10,
   },
   searchInput: {
     flex: 1,
@@ -269,6 +330,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
+  listaContainer: {
+    paddingBottom: 100,
+  },
+
   card: {
     flexDirection: "row",
     backgroundColor: "#1E1E1E",
@@ -276,6 +341,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     overflow: "hidden",
+    alignItems: "center",
   },
   imagem: {
     width: 60,
@@ -286,11 +352,13 @@ const styles = StyleSheet.create({
   cardInfo: {
     flex: 1,
     justifyContent: "center",
+    paddingRight: 10,
   },
   titulo: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+    marginBottom: 4,
   },
   subtitulo: {
     color: "#aaa",
@@ -299,16 +367,40 @@ const styles = StyleSheet.create({
   dataContainer: {
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
   },
   dataTexto: {
     color: "#fff",
     fontSize: 12,
     backgroundColor: "#1400B4",
     paddingVertical: 4,
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     borderRadius: 6,
-    overflow: "hidden",
+    minWidth: 40,
+    textAlign: "center",
+  },
+
+  listaVazia: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 40,
+  },
+  textoListaVazia: {
+    color: "#fff",
+    textAlign: "center",
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  botaoCriarEvento: {
+    backgroundColor: "#1400B4",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  botaoCriarEventoTexto: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 
   tabBar: {
