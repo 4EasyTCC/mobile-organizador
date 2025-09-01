@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Switch,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import axios from "axios";
@@ -16,7 +17,7 @@ import { API_URL } from "@env";
 export default function Etapa5({ navigation }) {
   const [dadosEvento, setDadosEvento] = useState(null);
   const [carregando, setCarregando] = useState(true);
-
+  const [criarChat, setCriarChat] = useState(true);  
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -43,35 +44,56 @@ export default function Etapa5({ navigation }) {
 
     carregarDados();
   }, []);
+
   const enviarEvento = async () => {
     try {
       if (!dadosEvento) return;
 
       const token = await AsyncStorage.getItem("userToken");
-      console.log("Token sendo usado:", token);
       if (!token) {
         Alert.alert("Erro", "Você precisa estar logado para criar um evento");
         return;
       }
 
+      const ingressosComValoresPadrao =
+        dadosEvento.ingressos?.map((ingresso) => ({
+          nome: ingresso.nome || "Ingresso",
+          quantidade: ingresso.quantidade || 0,
+          preco: ingresso.preco || 0,
+          descricao: ingresso.descricao || "",
+          dataLimiteVenda: ingresso.dataLimiteVenda || null,
+        })) || [];
+
       const dadosParaEnviar = {
         nome: dadosEvento.nome,
         descricao: dadosEvento.descricao,
-        estado: dadosEvento.estado,
         tipo: dadosEvento.tipo,
         privacidade: dadosEvento.privacidade,
         dataInicio: dadosEvento.dataInicio,
-        dataFim: dadosEvento.dataFim,
+        dataFim: dadosEvento.dataFim || dadosEvento.dataInicio,
         localizacao: dadosEvento.localizacao,
-        fotos: dadosEvento.fotos,
-        ingressos: dadosEvento.ingressos,
+        fotos: dadosEvento.fotos || [],
+        ingressos: ingressosComValoresPadrao,
+        criarChat: criarChat,
       };
+
+      console.log("Enviando dados:", dadosParaEnviar);
+
       const response = await axios.post(`${API_URL}/eventos`, dadosParaEnviar, {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
+        timeout: 15000,
       });
-      Alert.alert("Sucesso!", "Evento criado com sucesso!", [
+
+      let mensagemSucesso = "Evento criado com sucesso!";
+
+      if (criarChat && response.data.grupoChat) {
+        mensagemSucesso += " Grupo de chat criado automaticamente.";
+      }
+
+      Alert.alert("Sucesso!", mensagemSucesso, [
         {
           text: "OK",
           onPress: () => {
@@ -81,11 +103,22 @@ export default function Etapa5({ navigation }) {
         },
       ]);
     } catch (error) {
-      console.error("Erro ao criar evento:", error);
-      Alert.alert("Erro", "Não foi possível criar o evento");
+      console.error("Erro detalhado ao criar evento:", error);
+
+      let mensagemErro = "Não foi possível criar o evento";
+
+      if (error.response) {
+        mensagemErro = error.response.data.message || mensagemErro;
+        console.error("Resposta do servidor:", error.response.data);
+      } else if (error.request) {
+        mensagemErro = "Erro de conexão. Verifique sua internet.";
+      } else {
+        mensagemErro = error.message || mensagemErro;
+      }
+
+      Alert.alert("Erro", mensagemErro);
     }
   };
-
   const formatarData = (data) => {
     return new Date(data).toLocaleDateString("pt-BR", {
       day: "2-digit",
@@ -118,6 +151,7 @@ export default function Etapa5({ navigation }) {
       </View>
     );
   }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.titulo}>Confirmação do Evento</Text>
@@ -166,6 +200,26 @@ export default function Etapa5({ navigation }) {
           ))}
         </View>
       )}
+
+      {/* Nova seção para criar chat */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitulo}>Configurações de Chat</Text>
+        <View style={styles.chatOption}>
+          <Text style={styles.chatOptionText}>
+            Criar grupo de chat automaticamente
+          </Text>
+          <Switch
+            value={criarChat}
+            onValueChange={setCriarChat}
+            trackColor={{ false: "#767577", true: "#81b0ff" }}
+            thumbColor={criarChat ? "#3F51B5" : "#f4f3f4"}
+          />
+        </View>
+        <Text style={styles.chatDescription}>
+          Um grupo de chat será criado com o nome do evento para conversas entre
+          organizadores e participantes.
+        </Text>
+      </View>
 
       <TouchableOpacity style={styles.botaoConfirmar} onPress={enviarEvento}>
         <Text style={styles.botaoTexto}>Confirmar e Criar Evento</Text>
@@ -237,6 +291,23 @@ const styles = StyleSheet.create({
   },
   ingressoDetalhes: {
     color: "#666",
+  },
+  chatOption: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  chatOptionText: {
+    fontSize: 16,
+    color: "#333",
+    flex: 1,
+    marginRight: 10,
+  },
+  chatDescription: {
+    fontSize: 12,
+    color: "#666",
+    fontStyle: "italic",
   },
   botaoConfirmar: {
     backgroundColor: "#4CAF50",
