@@ -31,8 +31,8 @@ const RootNavigator = () => {
           name="Chat"
           component={Chat}
           options={{
-            headerShown: true, // MOSTRAR header apenas para Chat
-            title: "Chat", // Título padrão
+            headerShown: true,
+            title: "Chat",
             headerStyle: {
               backgroundColor: "#6A5ACD",
             },
