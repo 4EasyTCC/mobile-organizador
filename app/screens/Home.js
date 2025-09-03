@@ -1,145 +1,93 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   FlatList,
-  Image,
   StyleSheet,
-  ActivityIndicator,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { Feather, MaterialIcons, AntDesign } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL } from "@env";
 
 const HomeScreen = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("Ativos");
-  const [eventos, setEventos] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
 
-  useEffect(() => {
-    const fetchEventos = async () => {
-      try {
-        const token = await AsyncStorage.getItem("userToken");
-        if (!token) {
-          navigation.navigate("Login");
-          return;
-        }
-
-        const response = await fetch(`${API_URL}/eventos`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Erro ao buscar eventos");
-        }
-
-        const data = await response.json();
-
-        const eventosFormatados = data.map((evento) => ({
-          id: evento.eventoId.toString(),
-          titulo: evento.nomeEvento,
-          subtitulo: `Organizado por ${evento.Organizador.nome}`,
-          data: formatarData(evento.dataInicio),
-          imagem: require("../imagens/branca.png"),
-          categoria: getCategoria(evento.statusEvento),
-        }));
-
-        setEventos(eventosFormatados);
-      } catch (error) {
-        console.error("Erro ao buscar eventos:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEventos();
-  }, []);
-
-  const formatarData = (dataString) => {
-    const meses = [
-      "JAN",
-      "FEV",
-      "MAR",
-      "ABR",
-      "MAI",
-      "JUN",
-      "JUL",
-      "AGO",
-      "SET",
-      "OUT",
-      "NOV",
-      "DEZ",
-    ];
-    const data = new Date(dataString);
-    return `${data.getDate()} ${meses[data.getMonth()]}`;
-  };
-
-  const getCategoria = (status) => {
-    switch (status) {
-      case "CONCLUIDO":
-        return "Concluídos";
-      case "RASCUNHO":
-        return "Rascunhos";
-      default:
-        return "Ativos";
-    }
-  };
+  // Dados mockados para demonstração
+  const eventosMock = [
+    {
+      id: "1",
+      titulo: "Evento de Tecnologia",
+      subtitulo: "Organizado por TechCorp",
+      data: "15 NOV",
+      categoria: "Ativos",
+    },
+    {
+      id: "2",
+      titulo: "Workshop de Design",
+      subtitulo: "Organizado por DesignStudio",
+      data: "22 NOV",
+      categoria: "Ativos",
+    },
+    {
+      id: "3",
+      titulo: "Conferência Finalizada",
+      subtitulo: "Organizado por EventCorp",
+      data: "05 OUT",
+      categoria: "Concluídos",
+    },
+    {
+      id: "4",
+      titulo: "Rascunho do Evento",
+      subtitulo: "Organizado por MeuEvento",
+      data: "TBD",
+      categoria: "Rascunhos",
+    },
+  ];
 
   const renderEvento = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate("EventDetails", { evento: item })}
-    >
-      <Image source={item.imagem} style={styles.imagem} />
-      <View style={styles.cardInfo}>
-        <Text style={styles.titulo}>{item.titulo}</Text>
-        <Text style={styles.subtitulo}>{item.subtitulo}</Text>
-      </View>
-      <View style={styles.dataContainer}>
-        <Text style={styles.dataTexto}>{item.data}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const eventosFiltrados = eventos.filter(
-    (evento) => evento.categoria === selectedTab
-  );
-
-  if (loading) {
-    return (
-      <View
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
+    <BlurView intensity={20} style={styles.card}>
+      <LinearGradient
+        colors={["rgba(30, 30, 30, 0.9)", "rgba(20, 0, 180, 0.3)"]}
+        style={styles.cardGradient}
       >
-        <ActivityIndicator size="large" color="#1400B4" />
-      </View>
-    );
-  }
+        <View style={styles.iconContainer}>
+          <Feather name="calendar" size={24} color="#1400B4" />
+        </View>
+        <View style={styles.cardInfo}>
+          <Text style={styles.titulo}>{item.titulo}</Text>
+          <Text style={styles.subtitulo}>{item.subtitulo}</Text>
+        </View>
+        <LinearGradient
+          colors={["#1400B4", "#6B46C1"]}
+          style={styles.dataContainer}
+        >
+          <Text style={styles.dataTexto}>{item.data}</Text>
+        </LinearGradient>
+      </LinearGradient>
+    </BlurView>
+  );
+
+  const eventosFiltrados = eventosMock.filter(
+    (evento) => 
+      evento.categoria === selectedTab &&
+      (evento.titulo.toLowerCase().includes(searchText.toLowerCase()) ||
+       evento.subtitulo.toLowerCase().includes(searchText.toLowerCase()))
+  );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Image
-          source={require("../imagens/branca.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
+    <LinearGradient colors={["#0e0033", "#1a0066"]} style={styles.container}>
+      {/* Logo/Header */}
+      <BlurView intensity={30} style={styles.logoContainer}>
+        <Feather name="zap" size={40} color="#1400B4" />
+        <Text style={styles.logoText}>EventApp</Text>
+      </BlurView>
 
-      <View style={styles.searchContainer}>
-        <Feather
-          name="search"
-          size={20}
-          color="#aaa"
-          style={{ marginRight: 8 }}
-        />
+      {/* Search Container */}
+      <BlurView intensity={20} style={styles.searchContainer}>
+        <Feather name="search" size={20} color="#aaa" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Pesquise"
@@ -147,97 +95,118 @@ const HomeScreen = ({ navigation }) => {
           value={searchText}
           onChangeText={setSearchText}
         />
-      </View>
+      </BlurView>
 
+      {/* Tabs */}
       <View style={styles.tabs}>
         {["Ativos", "Concluídos", "Rascunhos"].map((tab) => (
           <TouchableOpacity
             key={tab}
-            style={[
-              styles.tabButton,
-              selectedTab === tab && styles.tabButtonActive,
-            ]}
             onPress={() => setSelectedTab(tab)}
           >
-            <Text
-              style={[
-                styles.tabText,
-                selectedTab === tab && styles.tabTextActive,
-              ]}
+            <LinearGradient
+              colors={
+                selectedTab === tab
+                  ? ["#1400B4", "#6B46C1"]
+                  : ["rgba(30, 30, 30, 0.8)", "rgba(30, 30, 30, 0.8)"]
+              }
+              style={styles.tabButton}
             >
-              {tab}
-            </Text>
+              <Text
+                style={[
+                  styles.tabText,
+                  selectedTab === tab && styles.tabTextActive,
+                ]}
+              >
+                {tab}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         ))}
       </View>
 
+      {/* Lista de Eventos */}
       <FlatList
-        data={eventosFiltrados.filter(
-          (evento) =>
-            evento.titulo.toLowerCase().includes(searchText.toLowerCase()) ||
-            evento.subtitulo.toLowerCase().includes(searchText.toLowerCase())
-        )}
+        data={eventosFiltrados}
         keyExtractor={(item) => item.id}
         renderItem={renderEvento}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
-          <Text style={{ color: "#fff", textAlign: "center", marginTop: 20 }}>
-            Nenhum evento encontrado
-          </Text>
+          <BlurView intensity={20} style={styles.emptyContainer}>
+            <Feather name="inbox" size={48} color="#6B46C1" />
+            <Text style={styles.emptyText}>Nenhum evento encontrado</Text>
+          </BlurView>
         }
       />
 
-      <View style={styles.tabBar}>
-        <MaterialIcons
-          name="home"
-          size={24}
-          color="#1400B4"
-          onPress={() => navigation.navigate("Home")}
-        />
-        <Feather
-          name="message-circle"
-          size={24}
-          color="#fff"
-          onPress={() => navigation.navigate("Chat")}
-        />
-        <TouchableOpacity
-          style={styles.centralButton}
-          onPress={() => navigation.navigate("Etapa1")}
+      {/* Tab Bar */}
+      <BlurView intensity={80} style={styles.tabBar}>
+        <LinearGradient
+          colors={["rgba(30, 30, 30, 0.9)", "rgba(20, 0, 180, 0.2)"]}
+          style={styles.tabBarGradient}
         >
-          <Feather name="plus" size={28} color="#fff" />
-        </TouchableOpacity>
-        <AntDesign name="barschart" size={24} color="#fff" />
-        <MaterialIcons
-          name="person"
-          size={24}
-          color="#fff"
-          onPress={() => navigation.navigate("Perfil")}
-        />
-      </View>
-    </View>
+          <TouchableOpacity style={styles.tabBarItem}>
+            <MaterialIcons name="home" size={24} color="#1400B4" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.tabBarItem}>
+            <Feather name="message-circle" size={24} color="#fff" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.centralButton}>
+            <LinearGradient
+              colors={["#1400B4", "#6B46C1"]}
+              style={styles.centralButtonGradient}
+            >
+              <Feather name="plus" size={28} color="#fff" />
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.tabBarItem}>
+            <AntDesign name="barschart" size={24} color="#fff" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.tabBarItem}>
+            <MaterialIcons name="person" size={24} color="#fff" />
+          </TouchableOpacity>
+        </LinearGradient>
+      </BlurView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0e0033", paddingTop: 50 },
+  container: {
+    flex: 1,
+    paddingTop: 50,
+  },
 
   logoContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    justifyContent: "center",
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 15,
+    padding: 15,
   },
-  logo: {
-    width: 200,
-    height: 80,
+  logoText: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "bold",
+    marginLeft: 10,
   },
 
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E1E1E",
     marginHorizontal: 16,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
@@ -248,89 +217,107 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: "row",
     justifyContent: "center",
-    marginVertical: 10,
+    marginBottom: 20,
   },
   tabButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     borderRadius: 20,
-    backgroundColor: "#1E1E1E",
     marginHorizontal: 5,
-  },
-  tabButtonActive: {
-    backgroundColor: "#1400B4",
   },
   tabText: {
     color: "#aaa",
     fontSize: 14,
+    textAlign: "center",
   },
   tabTextActive: {
     color: "#fff",
     fontWeight: "bold",
   },
 
+  listContainer: {
+    paddingBottom: 100,
+  },
   card: {
-    flexDirection: "row",
-    backgroundColor: "#1E1E1E",
-    borderRadius: 10,
     marginHorizontal: 16,
     marginBottom: 12,
+    borderRadius: 15,
     overflow: "hidden",
   },
-  imagem: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
-    margin: 10,
+  cardGradient: {
+    flexDirection: "row",
+    padding: 15,
+    alignItems: "center",
+  },
+  iconContainer: {
+    marginRight: 15,
   },
   cardInfo: {
     flex: 1,
-    justifyContent: "center",
   },
   titulo: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+    marginBottom: 4,
   },
   subtitulo: {
     color: "#aaa",
     fontSize: 13,
   },
   dataContainer: {
-    justifyContent: "center",
-    alignItems: "center",
+    paddingVertical: 6,
     paddingHorizontal: 10,
+    borderRadius: 8,
   },
   dataTexto: {
     color: "#fff",
     fontSize: 12,
-    backgroundColor: "#1400B4",
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 6,
-    overflow: "hidden",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
+  emptyContainer: {
+    alignItems: "center",
+    padding: 40,
+    marginHorizontal: 16,
+    borderRadius: 15,
+  },
+  emptyText: {
+    color: "#fff",
+    fontSize: 16,
+    marginTop: 10,
   },
 
   tabBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#1E1E1E",
-    height: 70,
-    paddingBottom: 10,
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
+    height: 80,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+  },
+  tabBarGradient: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingBottom: 10,
+  },
+  tabBarItem: {
+    alignItems: "center",
   },
   centralButton: {
+    marginBottom: 30,
+  },
+  centralButtonGradient: {
     width: 60,
     height: 60,
-    backgroundColor: "#1400B4",
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 30,
   },
 });
 
