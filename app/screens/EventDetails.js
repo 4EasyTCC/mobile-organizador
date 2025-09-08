@@ -607,4 +607,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+    addButton: {
+    borderRadius: 28,
+    overflow: 'hidden',
+  },
+  addButtonGradient: {
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
