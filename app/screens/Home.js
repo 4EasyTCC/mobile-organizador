@@ -10,20 +10,61 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  StatusBar,
 } from "react-native";
 import { Feather, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "@env";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+// Definição do tema (copiado do arquivo de GruposScreen)
+const theme = {
+  colors: {
+    primary: "#6366F1",
+    primaryDark: "#4F46E5",
+    secondary: "#8B5CF6",
+    background: "#0F172A",
+    backgroundSecondary: "#1E293B",
+    surface: "#334155",
+    white: "#FFFFFF",
+    textPrimary: "#F1F5F9",
+    textSecondary: "#94A3B8",
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 9999,
+  },
+};
 
 const HomeScreen = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("Ativos");
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchEventos();
   }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchEventos().finally(() => setRefreshing(false));
+  };
 
   const fetchEventos = async () => {
     try {
@@ -33,7 +74,6 @@ const HomeScreen = ({ navigation }) => {
         navigation.navigate("Login");
         return;
       }
-
       const response = await fetch(`${API_URL}/eventos`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -43,30 +83,24 @@ const HomeScreen = ({ navigation }) => {
       if (!response.ok) {
         throw new Error(`Erro HTTP: ${response.status}`);
       }
-
       const data = await response.json();
-      console.log("Dados recebidos do backend:", data);
-
       const eventosFormatados = data.map((evento) => {
-        console.log("Evento:", evento);
-
+        const fotoCapa = evento.Midia?.find((midia) => midia.tipo === "capa");
         const nomeOrganizador =
           evento.organizador && evento.organizador.nome
             ? evento.organizador.nome
             : "Organizador desconhecido";
-
         return {
           id: evento.eventoId?.toString() || Math.random().toString(),
           titulo: evento.nomeEvento || "Evento sem nome",
           subtitulo: `Organizado por ${nomeOrganizador}`,
           data: formatarData(evento.dataInicio),
-          imagem: require("../imagens/branca.png"),
+          imagem: fotoCapa ? `${API_URL}${fotoCapa.url}` : null,
           categoria: getCategoria(evento.statusEvento),
           status: evento.statusEvento || "ativo",
           rawData: evento,
         };
       });
-
       setEventos(eventosFormatados);
     } catch (error) {
       console.error("Erro ao buscar eventos:", error);
@@ -78,24 +112,25 @@ const HomeScreen = ({ navigation }) => {
 
   const formatarData = (dataString) => {
     if (!dataString) return "Data inválida";
-
+    const meses = [
+      "JAN",
+      "FEV",
+      "MAR",
+      "ABR",
+      "MAI",
+      "JUN",
+      "JUL",
+      "AGO",
+      "SET",
+      "OUT",
+      "NOV",
+      "DEZ",
+    ];
     try {
-      const meses = [
-        "JAN",
-        "FEV",
-        "MAR",
-        "ABR",
-        "MAI",
-        "JUN",
-        "JUL",
-        "AGO",
-        "SET",
-        "OUT",
-        "NOV",
-        "DEZ",
-      ];
       const data = new Date(dataString);
-      return `${data.getDate()} ${meses[data.getMonth()]}`;
+      return `${String(data.getDate()).padStart(2, "0")}/${String(
+        data.getMonth() + 1
+      ).padStart(2, "0")}`;
     } catch (error) {
       return "Data inválida";
     }
@@ -103,7 +138,6 @@ const HomeScreen = ({ navigation }) => {
 
   const getCategoria = (status) => {
     if (!status) return "Ativos";
-
     switch (status.toUpperCase()) {
       case "CONCLUIDO":
         return "Concluídos";
@@ -119,17 +153,28 @@ const HomeScreen = ({ navigation }) => {
       style={styles.card}
       onPress={() => navigation.navigate("EventDetails", { evento: item })}
     >
-      <Image source={item.imagem} style={styles.imagem} />
-      <View style={styles.cardInfo}>
-        <Text style={styles.titulo} numberOfLines={1}>
-          {item.titulo}
-        </Text>
-        <Text style={styles.subtitulo} numberOfLines={1}>
-          {item.subtitulo}
-        </Text>
-      </View>
-      <View style={styles.dataContainer}>
-        <Text style={styles.dataTexto}>{item.data}</Text>
+      <Image
+        source={
+          item.imagem ? { uri: item.imagem } : require("../imagens/roxa.png")
+        }
+        style={styles.cardImage}
+      />
+      <LinearGradient
+        colors={["transparent", "rgba(0,0,0,0.8)"]}
+        style={styles.cardGradient}
+      />
+      <View style={styles.cardContentOverlay}>
+        <View style={styles.dateBadge}>
+          <Text style={styles.dateBadgeText}>{item.data}</Text>
+        </View>
+        <View style={styles.cardTextContainer}>
+          <Text style={styles.titulo} numberOfLines={1}>
+            {item.titulo}
+          </Text>
+          <Text style={styles.subtitulo} numberOfLines={1}>
+            {item.subtitulo}
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -137,7 +182,6 @@ const HomeScreen = ({ navigation }) => {
   const eventosFiltrados = eventos.filter(
     (evento) => evento.categoria === selectedTab
   );
-
   const eventosBusca = eventosFiltrados.filter(
     (evento) =>
       evento.titulo.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -146,59 +190,64 @@ const HomeScreen = ({ navigation }) => {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centerContainer]}>
-        <ActivityIndicator size="large" color="#1400B4" />
-        <Text style={styles.carregandoTexto}>Carregando eventos...</Text>
-      </View>
+      <LinearGradient
+        colors={[theme.colors.background, theme.colors.backgroundSecondary]}
+        style={styles.loadingContainer}
+      >
+        <ActivityIndicator size="large" color={theme.colors.white} />
+        <Text style={styles.loadingText}>Carregando eventos...</Text>
+      </LinearGradient>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoContainer}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.colors.background}
+      />
+      <View style={styles.header}>
         <Image
           source={require("../imagens/branca.png")}
           style={styles.logo}
           resizeMode="contain"
         />
-      </View>
-
-      <View style={styles.searchContainer}>
-        <Feather
-          name="search"
-          size={20}
-          color="#aaa"
-          style={{ marginRight: 8 }}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Pesquise"
-          placeholderTextColor="#aaa"
-          value={searchText}
-          onChangeText={setSearchText}
-        />
-      </View>
-
-      <View style={styles.tabs}>
-        {["Ativos", "Concluídos", "Rascunhos"].map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tabButton,
-              selectedTab === tab && styles.tabButtonActive,
-            ]}
-            onPress={() => setSelectedTab(tab)}
-          >
-            <Text
+        <View style={styles.searchContainer}>
+          <Feather
+            name="search"
+            size={20}
+            color={theme.colors.textSecondary}
+            style={{ marginRight: 8 }}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="encontrar seus eventos"
+            placeholderTextColor={theme.colors.textSecondary}
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+        </View>
+        <View style={styles.tabs}>
+          {["Ativos", "Concluídos", "Rascunhos"].map((tab) => (
+            <TouchableOpacity
+              key={tab}
               style={[
-                styles.tabText,
-                selectedTab === tab && styles.tabTextActive,
+                styles.tabButton,
+                selectedTab === tab && styles.tabButtonActive,
               ]}
+              onPress={() => setSelectedTab(tab)}
             >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.tabText,
+                  selectedTab === tab && styles.tabTextActive,
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       <FlatList
@@ -227,202 +276,257 @@ const HomeScreen = ({ navigation }) => {
         }
         refreshControl={
           <RefreshControl
-            refreshing={false}
-            onRefresh={fetchEventos}
-            colors={["#1400B4"]}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
           />
         }
       />
 
-      <View style={styles.tabBar}>
-        <MaterialIcons
-          name="home"
-          size={24}
-          color="#1400B4"
-          onPress={() => navigation.navigate("Home")}
-        />
-        <Feather
-          name="message-circle"
-          size={24}
-          color="#fff"
-          onPress={() => navigation.navigate("GruposScreen")}
-        />
-        <TouchableOpacity
-          style={styles.centralButton}
-          onPress={() => navigation.navigate("Etapa1")}
+      {/* Bottom Tab Bar - NOVO ESTILO E FUNCIONALIDADE */}
+      <View style={styles.bottomTabBar}>
+        <LinearGradient
+          colors={["rgba(30, 41, 59, 0.95)", "rgba(15, 23, 42, 0.95)"]}
+          style={styles.tabBarGradient}
         >
-          <Feather name="plus" size={28} color="#fff" />
-        </TouchableOpacity>
-        <AntDesign name="barschart" size={24} color="#fff" />
-        <MaterialIcons
-          name="person"
-          size={24}
-          color="#fff"
-          onPress={() => navigation.navigate("Perfil")}
-        />
+          <TouchableOpacity
+            style={styles.tabIcon}
+            onPress={() => navigation.navigate("Home")}
+          >
+            <MaterialIcons name="home" size={24} color={theme.colors.primary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.tabIcon}
+            onPress={() => navigation.navigate("GruposScreen")}
+          >
+            <Feather
+              name="message-circle"
+              size={24}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.centralButton}
+            onPress={() => navigation.navigate("Etapa1")}
+          >
+            <LinearGradient
+              colors={[theme.colors.primary, theme.colors.secondary]}
+              style={styles.centralButtonGradient}
+            >
+              <Feather name="plus" size={28} color={theme.colors.white} />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.tabIcon}
+            onPress={() => navigation.navigate("Estatisticas")}
+          >
+            <Feather
+              name="bar-chart"
+              size={24}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.tabIcon}
+            onPress={() => navigation.navigate("Perfil")}
+          >
+            <MaterialIcons
+              name="person"
+              size={24}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </LinearGradient>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0e0033",
-    paddingTop: 50,
+    backgroundColor: theme.colors.background,
   },
-  centerContainer: {
+  loadingContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: theme.colors.background,
   },
-  carregandoTexto: {
-    color: "#fff",
+  loadingText: {
+    color: theme.colors.textPrimary,
     marginTop: 10,
+    fontSize: 16,
   },
-
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 10,
+  header: {
+    paddingTop: 10 ,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: theme.colors.background,
   },
   logo: {
-    width: 200,
-    height: 80,
+    width: 100,
+    height: 70,
+    marginBottom: 15,
   },
-
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E1E1E",
-    marginHorizontal: 16,
-    borderRadius: 8,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.lg,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: 10,
+    marginBottom: 15,
   },
   searchInput: {
     flex: 1,
-    color: "#fff",
-    fontSize: 14,
+    color: theme.colors.white,
+    fontSize: 16,
+    paddingLeft: 8,
   },
-
   tabs: {
     flexDirection: "row",
-    justifyContent: "center",
-    marginVertical: 10,
+    justifyContent: "space-between",
+    backgroundColor: "transparent",
+    marginBottom: 10,
   },
   tabButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: "#1E1E1E",
-    marginHorizontal: 5,
+    flex: 1,
+    alignItems: "center",
+    paddingBottom: 8,
   },
   tabButtonActive: {
-    backgroundColor: "#1400B4",
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.primary,
   },
   tabText: {
-    color: "#aaa",
-    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontSize: 15,
   },
   tabTextActive: {
-    color: "#fff",
+    color: theme.colors.white,
     fontWeight: "bold",
   },
-
   listaContainer: {
+    paddingTop: 10,
     paddingBottom: 100,
   },
-
   card: {
-    flexDirection: "row",
-    backgroundColor: "#1E1E1E",
-    borderRadius: 10,
+    height: 180,
+    borderRadius: 15,
     marginHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     overflow: "hidden",
-    alignItems: "center",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
-  imagem: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
-    margin: 10,
+  cardImage: {
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+    borderRadius: 15,
   },
-  cardInfo: {
-    flex: 1,
-    justifyContent: "center",
-    paddingRight: 10,
+  cardGradient: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "70%",
+    borderRadius: 15,
+  },
+  cardContentOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "space-between",
+    padding: 15,
+  },
+  dateBadge: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    alignSelf: "flex-start",
+  },
+  dateBadgeText: {
+    color: theme.colors.white,
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  cardTextContainer: {
+    alignItems: "flex-start",
   },
   titulo: {
-    color: "#fff",
+    color: theme.colors.white,
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 22,
     marginBottom: 4,
   },
   subtitulo: {
-    color: "#aaa",
-    fontSize: 13,
+    color: theme.colors.textSecondary,
+    fontSize: 16,
   },
-  dataContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-  },
-  dataTexto: {
-    color: "#fff",
-    fontSize: 12,
-    backgroundColor: "#1400B4",
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-    minWidth: 40,
-    textAlign: "center",
-  },
-
   listaVazia: {
     alignItems: "center",
     justifyContent: "center",
     padding: 40,
+    minHeight: 200,
   },
   textoListaVazia: {
-    color: "#fff",
+    color: theme.colors.textPrimary,
     textAlign: "center",
     marginBottom: 20,
     fontSize: 16,
   },
   botaoCriarEvento: {
-    backgroundColor: "#1400B4",
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
   },
   botaoCriarEventoTexto: {
-    color: "#fff",
+    color: theme.colors.white,
     fontWeight: "bold",
+    fontSize: 16,
   },
-
-  tabBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#1E1E1E",
-    height: 70,
-    paddingBottom: 10,
+  bottomTabBar: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
+    backgroundColor: "transparent",
+  },
+  tabBarGradient: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingVertical: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.1)",
+  },
+  tabIcon: {
+    padding: theme.spacing.sm,
   },
   centralButton: {
-    width: 60,
-    height: 60,
-    backgroundColor: "#1400B4",
-    borderRadius: 30,
+    marginBottom: theme.spacing.md,
+  },
+  centralButtonGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 30,
   },
 });
-
 export default HomeScreen;

@@ -16,9 +16,42 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "@env";
 import io from "socket.io-client";
+import { LinearGradient } from "expo-linear-gradient";
+
+// Definição do tema para consistência
+const theme = {
+  colors: {
+    primary: "#6366F1",
+    primaryDark: "#4F46E5",
+    secondary: "#8B5CF6",
+    background: "#0F172A",
+    backgroundSecondary: "#1E293B",
+    surface: "#334155",
+    white: "#FFFFFF",
+    textPrimary: "#F1F5F9",
+    textSecondary: "#94A3B8",
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 9999,
+  },
+};
 
 export default function ChatScreen({ route, navigation }) {
-  const { grupoId, grupoNome } = route.params;
+const { grupoId, grupoNome } = route.params; 
   const [mensagens, setMensagens] = useState([]);
   const [novaMensagem, setNovaMensagem] = useState("");
   const [carregando, setCarregando] = useState(true);
@@ -30,17 +63,21 @@ export default function ChatScreen({ route, navigation }) {
   useEffect(() => {
     navigation.setOptions({
       title: grupoNome || "Chat",
+      // Altera o estilo do cabeçalho para o tema
       headerStyle: {
-        backgroundColor: "#6A5ACD",
+        backgroundColor: theme.colors.background,
+        shadowColor: "transparent",
+        elevation: 0,
       },
-      headerTintColor: "#fff",
+      headerTintColor: theme.colors.white,
       headerTitleStyle: {
         fontWeight: "bold",
         fontSize: 18,
+        color: theme.colors.white,
       },
-      headerBackTitle: "Voltar", 
+      headerBackTitle: "Voltar",
       headerBackTitleStyle: {
-        color: "white",
+        color: theme.colors.white,
       },
     });
 
@@ -142,14 +179,14 @@ export default function ChatScreen({ route, navigation }) {
       const token = await AsyncStorage.getItem("userToken");
 
       const mensagemTemporaria = {
-        mensagemId: Date.now(), 
+        mensagemId: Date.now(),
         texto: novaMensagem,
         usuarioId: userData.current?.id,
         tipoUsuario: userData.current?.tipo,
         grupoId: parseInt(grupoId),
         createdAt: new Date().toISOString(),
         usuario: { nome: "Você" },
-        temporaria: true,  
+        temporaria: true,
       };
 
       setMensagens((prev) => [...prev, mensagemTemporaria]);
@@ -222,7 +259,10 @@ export default function ChatScreen({ route, navigation }) {
         </Text>
         {item.temporaria && (
           <View style={styles.indicadorEnvio}>
-            <ActivityIndicator size="small" color="#999" />
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.textSecondary}
+            />
           </View>
         )}
       </View>
@@ -232,7 +272,7 @@ export default function ChatScreen({ route, navigation }) {
   if (carregando) {
     return (
       <View style={styles.carregandoContainer}>
-        <ActivityIndicator size="large" color="#6A5ACD" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
         <Text style={styles.carregandoTexto}>Carregando mensagens...</Text>
       </View>
     );
@@ -264,7 +304,11 @@ export default function ChatScreen({ route, navigation }) {
         }}
         ListEmptyComponent={
           <View style={styles.listaVazia}>
-            <Ionicons name="chatbubble-outline" size={60} color="#ccc" />
+            <Ionicons
+              name="chatbubble-outline"
+              size={60}
+              color={theme.colors.textSecondary}
+            />
             <Text style={styles.textoListaVazia}>Nenhuma mensagem ainda</Text>
             <Text style={styles.subTextoListaVazia}>
               Seja o primeiro a enviar uma mensagem!
@@ -275,14 +319,14 @@ export default function ChatScreen({ route, navigation }) {
 
       <View style={styles.inputContainer}>
         <TouchableOpacity style={styles.adicionalButton}>
-          <Ionicons name="add" size={24} color="#6A5ACD" />
+          <Ionicons name="add" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
         <TextInput
           style={styles.input}
           value={novaMensagem}
           onChangeText={setNovaMensagem}
           placeholder="Digite sua mensagem..."
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.colors.textSecondary}
           multiline
           maxLength={500}
         />
@@ -295,9 +339,9 @@ export default function ChatScreen({ route, navigation }) {
           disabled={!novaMensagem.trim() || enviando}
         >
           {enviando ? (
-            <ActivityIndicator size="small" color="white" />
+            <ActivityIndicator size="small" color={theme.colors.white} />
           ) : (
-            <Ionicons name="send" size={20} color="white" />
+            <Ionicons name="send" size={20} color={theme.colors.white} />
           )}
         </TouchableOpacity>
       </View>
@@ -308,14 +352,14 @@ export default function ChatScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f0f5",
+    backgroundColor: theme.colors.background,
   },
   listaMensagens: {
-    padding: 16,
-    paddingBottom: 8,
+    padding: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
   },
   mensagemContainer: {
-    marginBottom: 16,
+    marginBottom: theme.spacing.md,
     maxWidth: "80%",
   },
   mensagemUsuarioAtual: {
@@ -329,23 +373,23 @@ const styles = StyleSheet.create({
   usuarioNome: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#666",
-    marginBottom: 4,
-    marginLeft: 8,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+    marginLeft: theme.spacing.sm,
   },
   balaoMensagem: {
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginBottom: 4,
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
   },
   balaoUsuarioAtual: {
-    backgroundColor: "#6A5ACD",
-    borderTopRightRadius: 4,
+    backgroundColor: theme.colors.primary,
+    borderTopRightRadius: theme.borderRadius.sm,
   },
   balaoOutroUsuario: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 4,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderTopLeftRadius: theme.borderRadius.sm,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -357,15 +401,15 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   mensagemTextoUsuarioAtual: {
-    color: "white",
+    color: theme.colors.white,
   },
   mensagemTextoOutroUsuario: {
-    color: "#333",
+    color: theme.colors.textPrimary,
   },
   mensagemHora: {
     fontSize: 10,
-    color: "#999",
-    marginHorizontal: 8,
+    color: theme.colors.textSecondary,
+    marginHorizontal: theme.spacing.sm,
   },
   indicadorEnvio: {
     position: "absolute",
@@ -374,50 +418,51 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: "row",
-    padding: 12,
-    backgroundColor: "white",
+    padding: theme.spacing.sm,
+    backgroundColor: theme.colors.backgroundSecondary,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
+    borderTopColor: theme.colors.surface,
     alignItems: "flex-end",
   },
   adicionalButton: {
-    padding: 8,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: "#f0f0f5",
+    padding: theme.spacing.sm,
+    marginRight: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.surface,
   },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginRight: 10,
+    borderColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.xl,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    marginRight: theme.spacing.sm,
     maxHeight: 100,
     fontSize: 16,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: theme.colors.surface,
+    color: theme.colors.white,
   },
   botaoEnviar: {
-    backgroundColor: "#6A5ACD",
+    backgroundColor: theme.colors.primary,
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: theme.borderRadius.full,
     justifyContent: "center",
     alignItems: "center",
   },
   botaoEnviarDesativado: {
-    backgroundColor: "#ccc",
+    backgroundColor: theme.colors.textSecondary,
   },
   carregandoContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f0f5",
+    backgroundColor: theme.colors.background,
   },
   carregandoTexto: {
-    marginTop: 12,
-    color: "#666",
+    marginTop: theme.spacing.md,
+    color: theme.colors.textPrimary,
     fontSize: 16,
   },
   listaVazia: {
@@ -428,13 +473,13 @@ const styles = StyleSheet.create({
   },
   textoListaVazia: {
     fontSize: 18,
-    color: "#999",
-    marginTop: 16,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.md,
     fontWeight: "500",
   },
   subTextoListaVazia: {
     fontSize: 14,
-    color: "#bbb",
-    marginTop: 4,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
   },
 });

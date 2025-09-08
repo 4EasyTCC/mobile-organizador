@@ -8,14 +8,18 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { API_URL } from "@env";
 
 export default function Etapa3({ navigation }) {
   const [fotoCapa, setFotoCapa] = useState(null);
   const [fotos, setFotos] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const escolherImagem = async (callback) => {
     try {
@@ -45,7 +49,7 @@ export default function Etapa3({ navigation }) {
     }
   };
 
-  const adicionarFotoGeral = async () => {
+  const adicionarFotoGeral = () => {
     if (fotos.length >= 10) {
       Alert.alert("Limite atingido", "Você pode adicionar no máximo 10 fotos");
       return;
@@ -57,22 +61,72 @@ export default function Etapa3({ navigation }) {
     setFotos(fotos.filter((_, i) => i !== index));
   };
 
+  // Função para fazer o upload de uma única imagem para o servidor
+  const uploadImagem = async (uri) => {
+    const formData = new FormData();
+    formData.append("arquivo", {
+      uri: uri,
+      name: `foto_${Date.now()}.jpg`, // Nome de arquivo único
+      type: "image/jpeg",
+    });
+
+    try {
+      const response = await axios.post(`${API_URL}/upload`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data.url; // Retorna a URL do servidor
+    } catch (error) {
+      console.error("Erro ao fazer upload da imagem:", error);
+      Alert.alert("Erro de Upload", "Não foi possível enviar a imagem.");
+      return null;
+    }
+  };
+
   const avancar = async () => {
-    const dadosEventoString = await AsyncStorage.getItem("@evento");
-    const dadosEvento = dadosEventoString ? JSON.parse(dadosEventoString) : {};
+    if (!fotoCapa) {
+      Alert.alert("Atenção", "Selecione uma foto de capa.");
+      return;
+    }
 
-    const dadosAtualizados = {
-      ...dadosEvento,
-      fotos: {
-        capa: fotoCapa,
-        galeria: fotos,
-      },
-    };
-    await AsyncStorage.setItem("@evento", JSON.stringify(dadosAtualizados));
-    navigation.navigate("Etapa4");
+    setLoading(true);
 
-    const dadosSalvos = await AsyncStorage.getItem("@evento");
-    console.log("Dados salvos no AsyncStorage:", JSON.parse(dadosSalvos));
+    try {
+      const uploadedFotos = [];
+
+      // Upload da foto de capa
+      const capaUrl = await uploadImagem(fotoCapa);
+      if (capaUrl) {
+        uploadedFotos.push({ url: capaUrl, tipo: "capa" });
+      }
+
+      // Upload das fotos da galeria
+      for (const fotoUri of fotos) {
+        const fotoUrl = await uploadImagem(fotoUri);
+        if (fotoUrl) {
+          uploadedFotos.push({ url: fotoUrl, tipo: "galeria" });
+        }
+      }
+
+      const dadosEventoString = await AsyncStorage.getItem("@evento");
+      const dadosEvento = dadosEventoString
+        ? JSON.parse(dadosEventoString)
+        : {};
+
+      const dadosAtualizados = {
+        ...dadosEvento,
+        fotos: uploadedFotos,
+      };
+      await AsyncStorage.setItem("@evento", JSON.stringify(dadosAtualizados));
+
+      navigation.navigate("Etapa4");
+    } catch (error) {
+      console.error("Erro ao processar as fotos:", error);
+      Alert.alert("Erro", "Não foi possível salvar os dados");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -137,9 +191,13 @@ export default function Etapa3({ navigation }) {
       <TouchableOpacity
         style={[styles.button, !fotoCapa && styles.buttonDisabled]}
         onPress={avancar}
-        disabled={!fotoCapa}
+        disabled={!fotoCapa || loading}
       >
-        <Text style={styles.buttonText}>Próximo</Text>
+        {loading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Próximo</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );

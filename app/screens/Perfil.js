@@ -25,8 +25,41 @@ import axios from "axios";
 import { API_URL } from "@env";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
+
+// Definição do tema para consistência com outras páginas
+const theme = {
+  colors: {
+    primary: "#6366F1",
+    primaryDark: "#4F46E5",
+    secondary: "#8B5CF6",
+    background: "#0F172A",
+    backgroundSecondary: "#1E293B",
+    surface: "#334155",
+    white: "#FFFFFF",
+    textPrimary: "#F1F5F9",
+    textSecondary: "#94A3B8",
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 9999,
+  },
+};
 
 const PerfilScreen = ({ navigation }) => {
   const [userData, setUserData] = useState(null);
@@ -300,7 +333,7 @@ const PerfilScreen = ({ navigation }) => {
                 onPress={handleSave}
               >
                 <LinearGradient
-                  colors={["#1400B4", "#1E88E5"]}
+                  colors={[theme.colors.primary, theme.colors.secondary]}
                   style={styles.gradientButton}
                 >
                   <Text style={styles.confirmButtonText}>Salvar</Text>
@@ -317,10 +350,10 @@ const PerfilScreen = ({ navigation }) => {
     return (
       <View style={styles.loadingContainer}>
         <LinearGradient
-          colors={["#1400B4", "#1E88E5"]}
+          colors={[theme.colors.background, theme.colors.backgroundSecondary]}
           style={styles.loadingGradient}
         >
-          <ActivityIndicator size="large" color="#fff" />
+          <ActivityIndicator size="large" color={theme.colors.white} />
           <Text style={styles.loadingText}>Carregando seu perfil...</Text>
         </LinearGradient>
       </View>
@@ -328,14 +361,20 @@ const PerfilScreen = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1400B4" />
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.colors.background}
+      />
 
       {/* Header com gradiente */}
-      <LinearGradient colors={["#1400B4", "#1E88E5"]} style={styles.header}>
+      <LinearGradient
+        colors={[theme.colors.background, theme.colors.backgroundSecondary]}
+        style={styles.header}
+      >
         <View style={styles.headerContent}>
           <Image
-            source={require("../imagens/branca.png")}
+            source={require("../imagens/branca.png")} 
             style={styles.logo}
             resizeMode="contain"
           />
@@ -382,25 +421,25 @@ const PerfilScreen = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#1400B4"]}
-            tintColor="#1400B4"
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
           />
         }
       >
         {/* Quick Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Ionicons name="calendar" size={24} color="#1400B4" />
+            <Ionicons name="calendar" size={24} color={theme.colors.primary} />
             <Text style={styles.statNumber}>12</Text>
             <Text style={styles.statLabel}>Eventos</Text>
           </View>
           <View style={styles.statItem}>
-            <Ionicons name="people" size={24} color="#1400B4" />
+            <Ionicons name="people" size={24} color={theme.colors.primary} />
             <Text style={styles.statNumber}>48</Text>
             <Text style={styles.statLabel}>Seguidores</Text>
           </View>
           <View style={styles.statItem}>
-            <Ionicons name="star" size={24} color="#1400B4" />
+            <Ionicons name="star" size={24} color={theme.colors.primary} />
             <Text style={styles.statNumber}>4.8</Text>
             <Text style={styles.statLabel}>Avaliação</Text>
           </View>
@@ -441,7 +480,11 @@ const PerfilScreen = ({ navigation }) => {
             >
               <View style={styles.menuItemContent}>
                 <View style={styles.menuIconContainer}>
-                  <Ionicons name={item.icon} size={20} color="#1400B4" />
+                  <Ionicons
+                    name={item.icon}
+                    size={20}
+                    color={theme.colors.primary}
+                  />
                 </View>
                 <Text style={styles.menuItemText}>{item.label}</Text>
               </View>
@@ -451,7 +494,11 @@ const PerfilScreen = ({ navigation }) => {
 
           {/* Logout Button */}
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color="#FF4757" />
+            <Ionicons
+              name="log-out-outline"
+              size={20}
+              color={theme.colors.error}
+            />
             <Text style={styles.logoutText}>Sair da Conta</Text>
           </TouchableOpacity>
         </View>
@@ -459,58 +506,84 @@ const PerfilScreen = ({ navigation }) => {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Bottom Tab Bar */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Home")}
-          style={styles.tabButton}
+      {/* Bottom Tab Bar (corrected and styled) */}
+      <View style={styles.bottomTabBar}>
+        <LinearGradient
+          colors={["rgba(30, 41, 59, 0.95)", "rgba(15, 23, 42, 0.95)"]}
+          style={styles.tabBarGradient}
         >
-          <MaterialIcons name="home" size={24} color="#fff" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Chat")}
-          style={styles.tabButton}
-        >
-          <Feather name="message-circle" size={24} color="#fff" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.centralButton}
-          onPress={() => navigation.navigate("Etapa1")}
-        >
-          <LinearGradient
-            colors={["#1400B4", "#1E88E5"]}
-            style={styles.centralButtonGradient}
+          {/* Home Button */}
+          <TouchableOpacity
+            style={styles.tabIcon}
+            onPress={() => navigation.navigate("Home")}
           >
-            <Feather name="plus" size={28} color="#fff" />
-          </LinearGradient>
-        </TouchableOpacity>
+            <MaterialIcons
+              name="home"
+              size={24}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Estatisticas")}
-          style={styles.tabButton}
-        >
-          <AntDesign name="barschart" size={24} color="#fff" />
-        </TouchableOpacity>
+          {/* Message Button */}
+          <TouchableOpacity
+            style={styles.tabIcon}
+            onPress={() => navigation.navigate("GruposScreen")}
+          >
+            <Feather
+              name="message-circle"
+              size={24}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Perfil")}
-          style={styles.tabButton}
-        >
-          <MaterialIcons name="person" size={24} color="#1400B4" />
-        </TouchableOpacity>
+          {/* Central Button */}
+          <TouchableOpacity
+            style={styles.centralButtonNav}
+            onPress={() => navigation.navigate("Etapa1")}
+          >
+            <LinearGradient
+              colors={[theme.colors.primary, theme.colors.secondary]}
+              style={styles.centralButtonGradient}
+            >
+              <Feather name="plus" size={28} color={theme.colors.white} />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Statistics Button */}
+          <TouchableOpacity
+            style={styles.tabIcon}
+            onPress={() => navigation.navigate("Estatisticas")}
+          >
+            <Feather
+              name="bar-chart"
+              size={24}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          {/* Profile Button (Active) */}
+          <TouchableOpacity
+            style={styles.tabIcon}
+            onPress={() => navigation.navigate("Perfil")}
+          >
+            <MaterialIcons
+              name="person"
+              size={24}
+              color={theme.colors.primary}
+            />
+          </TouchableOpacity>
+        </LinearGradient>
       </View>
 
       {renderEditModal()}
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: theme.colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -525,12 +598,12 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 16,
-    color: "#fff",
+    color: theme.colors.white,
     fontSize: 16,
     fontWeight: "500",
   },
   header: {
-    paddingTop: 50,
+    paddingTop: 10,
     paddingBottom: 20,
   },
   headerContent: {
@@ -538,20 +611,24 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logo: {
-    width: 120,
-    height: 40,
+    width: 100, // Tamanho ajustado
+    height: 70, // Tamanho ajustado
   },
   profileCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    marginHorizontal: 20,
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: theme.colors.backgroundSecondary,
+    marginHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
     alignItems: "center",
-    backdropFilter: "blur(10px)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 8,
   },
   avatarContainer: {
     position: "relative",
-    marginBottom: 15,
+    marginBottom: theme.spacing.md,
   },
   avatarTouchable: {
     position: "relative",
@@ -561,20 +638,20 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 4,
-    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderColor: theme.colors.primary,
   },
   editAvatarIcon: {
     position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: "#1400B4",
+    backgroundColor: theme.colors.primary,
     borderRadius: 15,
     width: 30,
     height: 30,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: theme.colors.backgroundSecondary,
   },
   profileInfo: {
     alignItems: "center",
@@ -582,29 +659,30 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 5,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs,
   },
   profileRole: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.8)",
-    marginBottom: 5,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
   },
   profileEmail: {
     fontSize: 14,
-    color: "rgba(255, 255, 255, 0.7)",
+    color: theme.colors.textSecondary,
   },
   scrollView: {
     flex: 1,
-    marginTop: -10,
+    paddingTop: theme.spacing.md,
   },
   statsContainer: {
     flexDirection: "row",
-    backgroundColor: "#fff",
-    marginHorizontal: 20,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    justifyContent: "space-around",
+    backgroundColor: theme.colors.backgroundSecondary,
+    marginHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -618,41 +696,42 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#1400B4",
-    marginTop: 8,
-    marginBottom: 4,
+    color: theme.colors.primary,
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
   },
   statLabel: {
     fontSize: 12,
-    color: "#666",
+    color: theme.colors.textSecondary,
     fontWeight: "500",
   },
   menuContainer: {
-    backgroundColor: "#fff",
-    marginHorizontal: 20,
-    borderRadius: 15,
+    backgroundColor: theme.colors.backgroundSecondary,
+    marginHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.xl,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 3,
     overflow: "hidden",
+    marginBottom: theme.spacing.md,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
-    padding: 20,
-    paddingBottom: 10,
+    color: theme.colors.textPrimary,
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f2f5",
+    borderBottomColor: theme.colors.surface,
   },
   menuItemContent: {
     flexDirection: "row",
@@ -662,66 +741,75 @@ const styles = StyleSheet.create({
   menuIconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 10,
-    backgroundColor: "#f0f2ff",
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: theme.spacing.md,
   },
   menuItemText: {
     fontSize: 16,
-    color: "#333",
+    color: theme.colors.textPrimary,
     fontWeight: "500",
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    marginTop: 10,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.sm,
   },
   logoutText: {
     fontSize: 16,
-    color: "#FF4757",
+    color: theme.colors.error,
     fontWeight: "600",
-    marginLeft: 15,
+    marginLeft: theme.spacing.md,
   },
   bottomSpacer: {
     height: 100,
   },
-  tabBar: {
+  // --- Bottom Tab Bar Styles (Replicated from other pages) ---
+  bottomTabBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "transparent",
+  },
+  tabBarGradient: {
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "#1E1E1E",
-    height: 70,
-    paddingBottom: 10,
+    paddingVertical: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
     borderTopWidth: 1,
-    borderTopColor: "#333",
+    borderTopColor: "rgba(255,255,255,0.1)",
   },
-  tabButton: {
-    padding: 10,
+  tabIcon: {
+    padding: theme.spacing.sm,
   },
-  centralButton: {
-    marginBottom: 30,
+  centralButtonNav: {
+    marginBottom: theme.spacing.md,
   },
   centralButtonGradient: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
   },
-  // Modal styles
+  // --- End of Bottom Tab Bar Styles ---
+
+  // Modal styles (ajustado para o novo tema)
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.xl,
     width: width - 40,
     maxHeight: "70%",
     overflow: "hidden",
@@ -730,66 +818,69 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.surface,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#1400B4",
+    color: theme.colors.textPrimary,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#f0f2f5",
+    backgroundColor: theme.colors.surface,
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
-    padding: 20,
+    padding: theme.spacing.lg,
   },
   modalInput: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
+    borderColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
     fontSize: 16,
-    backgroundColor: "#f8fafc",
+    backgroundColor: theme.colors.surface,
+    color: theme.colors.white,
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    marginTop: theme.spacing.lg,
   },
   modalButton: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: theme.borderRadius.lg,
     overflow: "hidden",
   },
   cancelButton: {
-    backgroundColor: "#f1f5f9",
-    marginRight: 10,
-    paddingVertical: 15,
+    backgroundColor: theme.colors.surface,
+    marginRight: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
     alignItems: "center",
   },
   confirmButton: {
-    marginLeft: 10,
+    marginLeft: theme.spacing.sm,
   },
   gradientButton: {
-    paddingVertical: 15,
+    paddingVertical: theme.spacing.md,
     alignItems: "center",
-    borderRadius: 12,
+    borderRadius: theme.borderRadius.lg,
   },
   cancelButtonText: {
-    color: "#64748b",
+    color: theme.colors.textSecondary,
     fontWeight: "600",
     fontSize: 16,
   },
   confirmButtonText: {
-    color: "#fff",
+    color: theme.colors.white,
     fontWeight: "bold",
     fontSize: 16,
   },

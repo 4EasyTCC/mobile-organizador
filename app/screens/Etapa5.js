@@ -17,7 +17,8 @@ import { API_URL } from "@env";
 export default function Etapa5({ navigation }) {
   const [dadosEvento, setDadosEvento] = useState(null);
   const [carregando, setCarregando] = useState(true);
-  const [criarChat, setCriarChat] = useState(true);  
+  const [criarChat, setCriarChat] = useState(true);
+
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -72,7 +73,7 @@ export default function Etapa5({ navigation }) {
         dataInicio: dadosEvento.dataInicio,
         dataFim: dadosEvento.dataFim || dadosEvento.dataInicio,
         localizacao: dadosEvento.localizacao,
-        fotos: dadosEvento.fotos || [],
+        fotos: dadosEvento.fotos || [], // Agora isso contém as URLs do servidor
         ingressos: ingressosComValoresPadrao,
         criarChat: criarChat,
       };
@@ -119,6 +120,7 @@ export default function Etapa5({ navigation }) {
       Alert.alert("Erro", mensagemErro);
     }
   };
+
   const formatarData = (data) => {
     return new Date(data).toLocaleDateString("pt-BR", {
       day: "2-digit",
