@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+/*import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -21,9 +21,8 @@ export default function EventDetails({ route, navigation }) {
   const [eventoDetalhes, setEventoDetalhes] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    buscarEvento();
-  }, []);
+export default function EventDetails({ navigation }) {
+  const [selectedTab, setSelectedTab] = useState('Informações');
 
   const buscarEvento = async () => {
     try {
@@ -42,13 +41,13 @@ export default function EventDetails({ route, navigation }) {
       if (!response.ok || !data.success) {
         throw new Error(data.message || "Erro na resposta do servidor.");
       }
-
-      setEventoDetalhes(data.evento);
-    } catch (err) {
-      console.error("Erro ao carregar evento:", err);
-      Alert.alert("Erro", "Não foi possível carregar os detalhes do evento");
-    } finally {
-      setLoading(false);
+    }catch(error){}
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Confirmado': return '#00D4AA';
+      case 'Pendente': return '#FFB800';
+      case 'Recusado': return '#FF6B6B';
+      default: return '#6C7B7F';
     }
   };
 
@@ -62,7 +61,7 @@ export default function EventDetails({ route, navigation }) {
 
   const renderTabContent = () => {
     switch (selectedTab) {
-      case "Informações":
+      case 'Informações':
         return (
           <View style={styles.card}>
             <View style={styles.infoRow}>
@@ -173,6 +172,7 @@ export default function EventDetails({ route, navigation }) {
             )}
           </View>
         );
+        
       default:
         return null;
     }
@@ -240,8 +240,7 @@ export default function EventDetails({ route, navigation }) {
       </View>
     </ScrollView>
   );
-}
-
+}}}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -408,3 +407,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+*/

@@ -16,6 +16,7 @@
     "@react-native-community/netinfo": "11.4.1",
     "@react-navigation/stack": "^7.4.5",
     "axios": "^1.11.0",
+    "dotenv": "^17.2.2",
     "expo": "~53.0.20",
     "expo-blur": "^14.1.5",
     "expo-font": "~13.3.2",
@@ -31,10 +32,12 @@
     "react-native-dotenv": "^3.4.11",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-maps": "1.20.1",
+    "react-native-reanimated": "^4.1.0",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "semver": "^7.7.2"
   },
   "private": true
 }
