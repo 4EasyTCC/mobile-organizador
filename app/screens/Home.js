@@ -1,59 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   FlatList,
-  Image,
   StyleSheet,
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-  StatusBar,
 } from "react-native";
-import { Feather, MaterialIcons, AntDesign } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL } from "@env";
 import { LinearGradient } from "expo-linear-gradient";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-// Definição do tema (copiado do arquivo de GruposScreen)
-const theme = {
-  colors: {
-    primary: "#6366F1",
-    primaryDark: "#4F46E5",
-    secondary: "#8B5CF6",
-    background: "#0F172A",
-    backgroundSecondary: "#1E293B",
-    surface: "#334155",
-    white: "#FFFFFF",
-    textPrimary: "#F1F5F9",
-    textSecondary: "#94A3B8",
-    success: "#10B981",
-    warning: "#F59E0B",
-    error: "#EF4444",
-  },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-  },
-  borderRadius: {
-    sm: 4,
-    md: 8,
-    lg: 12,
-    xl: 16,
-    full: 9999,
-  },
-};
+import { BlurView } from "expo-blur";
+import { Feather, MaterialIcons, AntDesign } from "@expo/vector-icons";
 
 const HomeScreen = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("Ativos");
-  const [eventos, setEventos] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
@@ -179,8 +138,11 @@ const HomeScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const eventosFiltrados = eventos.filter(
-    (evento) => evento.categoria === selectedTab
+  const eventosFiltrados = eventosMock.filter(
+    (evento) => 
+      evento.categoria === selectedTab &&
+      (evento.titulo.toLowerCase().includes(searchText.toLowerCase()) ||
+       evento.subtitulo.toLowerCase().includes(searchText.toLowerCase()))
   );
   const eventosBusca = eventosFiltrados.filter(
     (evento) =>
@@ -250,11 +212,12 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* Lista de Eventos */}
       <FlatList
-        data={eventosBusca}
+        data={eventosFiltrados}
         keyExtractor={(item) => item.id}
         renderItem={renderEvento}
-        contentContainerStyle={styles.listaContainer}
+        contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <View style={styles.listaVazia}>
             <Text style={styles.textoListaVazia}>
@@ -478,7 +441,6 @@ const styles = StyleSheet.create({
   },
   listaVazia: {
     alignItems: "center",
-    justifyContent: "center",
     padding: 40,
     minHeight: 200,
   },

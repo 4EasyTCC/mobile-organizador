@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 
-const { width, height } = Dimensions.get("window");
+const { width, height } = Dimensions.get('window');
 
 export default function Etapa1({ navigation }) {
   const [evento, setEvento] = useState({
@@ -53,55 +53,36 @@ export default function Etapa1({ navigation }) {
   const tiposEvento = [
     { label: "🎉 Festa", value: "Festa", icon: "🎉" },
     { label: "📊 Conferência", value: "Conferência", icon: "📊" },
-    { label: "🛠 Workshop", value: "Workshop", icon: "🛠" },
+    { label: "🛠️ Workshop", value: "Workshop", icon: "🛠️" },
     { label: "👥 Encontro", value: "Encontro", icon: "👥" },
     { label: "🚀 Lançamento", value: "Lançamento", icon: "🚀" },
   ];
-
+  
   const opcoesPrivacidade = [
-    {
-      label: "🌍 Público",
-      value: "Público",
-      icon: "globe-outline",
-      desc: "Visível para todos",
-    },
-    {
-      label: "🔒 Privado",
-      value: "Privado",
-      icon: "lock-closed-outline",
-      desc: "Apenas convidados",
-    },
+    { label: "🌍 Público", value: "Público", icon: "globe-outline", desc: "Visível para todos" },
+    { label: "🔒 Privado", value: "Privado", icon: "lock-closed-outline", desc: "Apenas convidados" },
   ];
 
-  const ModernInput = ({
-    title,
-    value,
-    onChangeText,
-    placeholder,
-    multiline = false,
-    icon,
-  }) => (
-    <Animated.View
-      style={{
-        marginBottom: 24,
+  const ModernInput = ({ title, value, onChangeText, placeholder, multiline = false, icon }) => (
+    <Animated.View 
+      style={{ 
+        marginBottom: 24, 
         opacity: fadeAnim,
-        transform: [{ translateY: slideAnim }],
+        transform: [{ translateY: slideAnim }] 
       }}
     >
       <View style={styles.inputHeader}>
         {icon && <Ionicons name={icon} size={20} color="#6366F1" />}
         <Text style={styles.inputLabel}>{title}</Text>
       </View>
-      <View
-        style={[
-          styles.inputContainer,
-          focusedField === title && styles.inputFocused,
-        ]}
-      >
+      <View style={[
+        styles.inputContainer,
+        focusedField === title && styles.inputFocused,
+      ]}>
         <TextInput
           style={[
             styles.textInput,
-            multiline && { height: 100, textAlignVertical: "top" },
+            multiline && { height: 100, textAlignVertical: "top" }
           ]}
           placeholder={placeholder}
           placeholderTextColor="#9CA3AF"
@@ -115,40 +96,39 @@ export default function Etapa1({ navigation }) {
     </Animated.View>
   );
 
-  const SelectInput = ({
-    title,
-    value,
-    options,
-    onSelect,
-    placeholder,
-    icon,
-  }) => {
+  const SelectInput = ({ title, value, options, onSelect, placeholder, icon }) => {
     const [isOpen, setIsOpen] = useState(false);
-
+    
     return (
-      <Animated.View
-        style={{
+      <Animated.View 
+        style={{ 
           marginBottom: 24,
           opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
+          transform: [{ translateY: slideAnim }] 
         }}
       >
         <View style={styles.inputHeader}>
           {icon && <Ionicons name={icon} size={20} color="#6366F1" />}
           <Text style={styles.inputLabel}>{title}</Text>
         </View>
-
+        
         <TouchableOpacity
-          style={[styles.selectButton, isOpen && styles.selectButtonOpen]}
+          style={[
+            styles.selectButton,
+            isOpen && styles.selectButtonOpen,
+          ]}
           onPress={() => setIsOpen(!isOpen)}
         >
-          <Text style={[styles.selectText, value && styles.selectTextSelected]}>
+          <Text style={[
+            styles.selectText,
+            value && styles.selectTextSelected
+          ]}>
             {value || placeholder}
           </Text>
-          <Ionicons
-            name={isOpen ? "chevron-up" : "chevron-down"}
-            size={20}
-            color="#6366F1"
+          <Ionicons 
+            name={isOpen ? "chevron-up" : "chevron-down"} 
+            size={20} 
+            color="#6366F1" 
           />
         </TouchableOpacity>
 
@@ -163,7 +143,7 @@ export default function Etapa1({ navigation }) {
                 }}
                 style={[
                   styles.optionItem,
-                  index === options.length - 1 && styles.optionItemLast,
+                  index === options.length - 1 && styles.optionItemLast
                 ]}
               >
                 <View style={styles.optionContent}>
@@ -181,7 +161,7 @@ export default function Etapa1({ navigation }) {
                     )}
                   </View>
                 </View>
-                {value === (option.value || option) && (
+                {(value === (option.value || option)) && (
                   <Ionicons name="checkmark" size={20} color="#10B981" />
                 )}
               </TouchableOpacity>
@@ -224,18 +204,18 @@ export default function Etapa1({ navigation }) {
     };
 
     return (
-      <Animated.View
-        style={{
+      <Animated.View 
+        style={{ 
           marginBottom: 24,
           opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
+          transform: [{ translateY: slideAnim }] 
         }}
       >
         <View style={styles.inputHeader}>
           {icon && <Ionicons name={icon} size={20} color="#6366F1" />}
           <Text style={styles.inputLabel}>{title}</Text>
         </View>
-
+        
         <View style={styles.dateTimeContainer}>
           <TouchableOpacity
             style={[styles.dateTimeButton, { flex: 2 }]}
@@ -246,7 +226,7 @@ export default function Etapa1({ navigation }) {
               <Text style={styles.dateTimeText}>{formatDate(date)}</Text>
             </View>
           </TouchableOpacity>
-
+          
           <TouchableOpacity
             style={[styles.dateTimeButton, { flex: 1, marginLeft: 12 }]}
             onPress={() => showMode("time")}
@@ -257,7 +237,7 @@ export default function Etapa1({ navigation }) {
             </View>
           </TouchableOpacity>
         </View>
-
+        
         {showPicker && (
           <DateTimePicker
             value={date}
@@ -271,20 +251,15 @@ export default function Etapa1({ navigation }) {
   };
 
   const avancar = async () => {
-    if (
-      !evento.nome ||
-      !evento.descricao ||
-      !evento.tipo ||
-      !evento.privacidade
-    ) {
-      Alert.alert("⚠ Atenção", "Preencha todos os campos obrigatórios");
+    if (!evento.nome || !evento.descricao || !evento.tipo || !evento.privacidade) {
+      Alert.alert("⚠️ Atenção", "Preencha todos os campos obrigatórios");
       return;
     }
 
     setIsLoading(true);
     try {
       await AsyncStorage.setItem("@evento", JSON.stringify(evento));
-
+      
       // Simula um pequeno delay para mostrar o loading
       setTimeout(() => {
         setIsLoading(false);
@@ -300,19 +275,22 @@ export default function Etapa1({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#6366F1" />
-
+      
       {/* Header com gradiente */}
-      <LinearGradient colors={["#6366F1", "#8B5CF6"]} style={styles.header}>
+      <LinearGradient
+        colors={['#6366F1', '#8B5CF6']}
+        style={styles.header}
+      >
         <View style={styles.headerContent}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()} 
             style={styles.backButton}
           >
             <BlurView intensity={20} style={styles.backButtonBlur}>
               <Ionicons name="arrow-back" size={24} color="#fff" />
             </BlurView>
           </TouchableOpacity>
-
+          
           <View style={styles.headerInfo}>
             <Image
               source={require("../imagens/branca.png")}
@@ -320,7 +298,7 @@ export default function Etapa1({ navigation }) {
             />
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: "33%" }]} />
+                <View style={[styles.progressFill, { width: '33%' }]} />
               </View>
               <Text style={styles.progressText}>Etapa 1 de 3</Text>
             </View>
@@ -334,20 +312,19 @@ export default function Etapa1({ navigation }) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View
+        <Animated.View 
           style={[
             styles.formContainer,
-            {
+            { 
               opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
+              transform: [{ translateY: slideAnim }] 
+            }
           ]}
         >
           <View style={styles.titleContainer}>
             <Text style={styles.title}>✨ Informações do Evento</Text>
             <Text style={styles.subtitle}>
-              Vamos começar criando um evento incrível! Preencha as informações
-              básicas.
+              Vamos começar criando um evento incrível! Preencha as informações básicas.
             </Text>
           </View>
 
@@ -389,33 +366,24 @@ export default function Etapa1({ navigation }) {
           <DateTimeInput
             title="Data e Hora de Início"
             date={evento.dataInicio}
-            onChangeDate={(novaData) =>
-              setEvento({ ...evento, dataInicio: novaData })
-            }
+            onChangeDate={(novaData) => setEvento({ ...evento, dataInicio: novaData })}
             icon="play-outline"
           />
 
           <DateTimeInput
             title="Data e Hora de Término"
             date={evento.dataFim}
-            onChangeDate={(novaData) =>
-              setEvento({ ...evento, dataFim: novaData })
-            }
+            onChangeDate={(novaData) => setEvento({ ...evento, dataFim: novaData })}
             icon="stop-outline"
           />
 
           <TouchableOpacity
-            style={[
-              styles.continueButton,
-              isLoading && styles.continueButtonLoading,
-            ]}
+            style={[styles.continueButton, isLoading && styles.continueButtonLoading]}
             onPress={avancar}
             disabled={isLoading}
           >
             <LinearGradient
-              colors={
-                isLoading ? ["#9CA3AF", "#6B7280"] : ["#6366F1", "#8B5CF6"]
-              }
+              colors={isLoading ? ['#9CA3AF', '#6B7280'] : ['#6366F1', '#8B5CF6']}
               style={styles.continueButtonGradient}
             >
               {isLoading ? (
@@ -442,15 +410,15 @@ export default function Etapa1({ navigation }) {
 const styles = {
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: '#F8FAFC',
   },
   header: {
     paddingTop: 20,
     paddingBottom: 30,
   },
   headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
   },
   backButton: {
@@ -460,8 +428,8 @@ const styles = {
     width: 44,
     height: 44,
     borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerInfo: {
     flex: 1,
@@ -469,26 +437,26 @@ const styles = {
   logo: {
     width: 200,
     height: 120,
-    resizeMode: "contain",
+    resizeMode: 'contain',
   },
   progressContainer: {
     marginTop: 12,
   },
   progressBar: {
     height: 4,
-    backgroundColor: "rgba(255,255,255,0.3)",
+    backgroundColor: 'rgba(255,255,255,0.3)',
     borderRadius: 2,
     marginBottom: 8,
   },
   progressFill: {
-    height: "100%",
-    backgroundColor: "#fff",
+    height: '100%',
+    backgroundColor: '#fff',
     borderRadius: 2,
   },
   progressText: {
-    color: "rgba(255,255,255,0.9)",
+    color: 'rgba(255,255,255,0.9)',
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   scrollView: {
     flex: 1,
@@ -497,7 +465,7 @@ const styles = {
     paddingBottom: 40,
   },
   formContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 24,
@@ -510,98 +478,98 @@ const styles = {
   },
   title: {
     fontSize: 24,
-    fontWeight: "700",
-    color: "#1F2937",
+    fontWeight: '700',
+    color: '#1F2937',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6B7280",
+    color: '#6B7280',
     lineHeight: 24,
   },
   inputHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
   },
   inputLabel: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
+    fontWeight: '600',
+    color: '#374151',
     marginLeft: 8,
   },
   inputContainer: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: '#F9FAFB',
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderColor: '#E5E7EB',
   },
   inputFocused: {
-    borderColor: "#6366F1",
-    backgroundColor: "#fff",
+    borderColor: '#6366F1',
+    backgroundColor: '#fff',
   },
   textInput: {
     fontSize: 16,
-    color: "#1F2937",
+    color: '#1F2937',
     padding: 16,
   },
   selectButton: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: '#F9FAFB',
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderColor: '#E5E7EB',
     padding: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   selectButtonOpen: {
-    borderColor: "#6366F1",
-    backgroundColor: "#fff",
+    borderColor: '#6366F1',
+    backgroundColor: '#fff',
   },
   selectText: {
     fontSize: 16,
-    color: "#9CA3AF",
+    color: '#9CA3AF',
   },
   selectTextSelected: {
-    color: "#1F2937",
-    fontWeight: "500",
+    color: '#1F2937',
+    fontWeight: '500',
   },
   optionsContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 16,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    shadowColor: "#000",
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
   },
   optionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: '#F3F4F6',
   },
   optionItemLast: {
     borderBottomWidth: 0,
   },
   optionContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
   optionIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#F0F9FF",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#F0F9FF',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   optionTextContainer: {
@@ -609,39 +577,39 @@ const styles = {
   },
   optionText: {
     fontSize: 16,
-    fontWeight: "500",
-    color: "#1F2937",
+    fontWeight: '500',
+    color: '#1F2937',
   },
   optionDesc: {
     fontSize: 14,
-    color: "#6B7280",
+    color: '#6B7280',
     marginTop: 2,
   },
   dateTimeContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
   },
   dateTimeButton: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: '#F9FAFB',
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderColor: '#E5E7EB',
     padding: 16,
   },
   dateTimeContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dateTimeText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#374151",
+    fontWeight: '500',
+    color: '#374151',
     marginLeft: 8,
   },
   continueButton: {
     marginTop: 32,
     borderRadius: 16,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   continueButtonLoading: {
     opacity: 0.8,
@@ -649,22 +617,22 @@ const styles = {
   continueButtonGradient: {
     paddingVertical: 18,
     paddingHorizontal: 32,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   continueButtonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
     marginRight: 8,
   },
   loadingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   loadingSpinner: {
     marginRight: 8,

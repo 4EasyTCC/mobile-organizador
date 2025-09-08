@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+/*import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
   StyleSheet,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  StatusBar,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -81,9 +80,10 @@ const { grupoId, grupoNome } = route.params;
       },
     });
 
-    carregarMensagens();
-    configurarSocket();
-    carregarDadosUsuario();
+// ===== COMPONENTE PRINCIPAL =====
+const MensagensScreen = ({ navigation }) => {
+  const [filtro, setFiltro] = useState("Todas");
+  const [searchText, setSearchText] = useState("");
 
     return () => {
       if (socket) {
@@ -203,52 +203,52 @@ const { grupoId, grupoNome } = route.params;
         { texto: novaMensagem },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-    } catch (error) {
-      console.error("Erro ao enviar mensagem:", error);
-      setMensagens((prev) => prev.filter((m) => !m.temporaria));
-      Alert.alert("Erro", "Não foi possível enviar a mensagem");
-    } finally {
-      setEnviando(false);
     }
+    
+    if (searchText.trim()) {
+      filtered = filtered.filter(msg =>
+        msg.nome.toLowerCase().includes(searchText.toLowerCase()) ||
+        msg.mensagem.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+    
+    return filtered;
   };
 
-  const renderizarMensagem = ({ item }) => {
-    const isUsuarioAtual =
-      userData.current &&
-      item.usuarioId === userData.current.id &&
-      item.tipoUsuario === userData.current.tipo;
-
-    return (
-      <View
-        style={[
-          styles.mensagemContainer,
-          isUsuarioAtual
-            ? styles.mensagemUsuarioAtual
-            : styles.mensagemOutroUsuario,
-        ]}
+  const renderMessageCard = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.messageCard}
+      onPress={() => navigation.navigate("ChatDetail", { contact: item })}
+      activeOpacity={0.7}
+    >
+      <LinearGradient
+        colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+        style={styles.messageCardGradient}
       >
-        {!isUsuarioAtual && (
-          <Text style={styles.usuarioNome}>
-            {item.usuario?.nome || "Usuário"}
-          </Text>
-        )}
-        <View
-          style={[
-            styles.balaoMensagem,
-            isUsuarioAtual
-              ? styles.balaoUsuarioAtual
-              : styles.balaoOutroUsuario,
-          ]}
-        >
-          <Text
-            style={[
-              styles.mensagemTexto,
-              isUsuarioAtual
-                ? styles.mensagemTextoUsuarioAtual
-                : styles.mensagemTextoOutroUsuario,
-            ]}
+        <View style={styles.avatarContainer}>
+          <LinearGradient
+            colors={[theme.colors.primary, theme.colors.secondary]}
+            style={styles.avatar}
           >
-            {item.texto}
+            <Text style={styles.avatarText}>
+              {item.nome.charAt(0).toUpperCase()}
+            </Text>
+          </LinearGradient>
+          {item.online && <View style={styles.onlineIndicator} />}
+          {item.tipo === "grupo" && (
+            <View style={styles.groupBadge}>
+              <Feather name="users" size={10} color={theme.colors.white} />
+            </View>
+          )}
+        </View>
+
+        <View style={styles.messageContent}>
+          <View style={styles.messageHeader}>
+            <Text style={styles.messageName}>{item.nome}</Text>
+            <Text style={styles.messageTime}>{item.hora}</Text>
+          </View>
+          <Text style={styles.messageText} numberOfLines={1}>
+            {item.mensagem}
           </Text>
         </View>
         <Text style={styles.mensagemHora}>
@@ -349,6 +349,69 @@ const { grupoId, grupoNome } = route.params;
   );
 }
 
+        <FlatList
+          data={filtrarMensagens()}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessageCard}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Feather name="message-square" size={48} color={theme.colors.textSecondary} />
+              <Text style={styles.emptyText}>Nenhuma conversa encontrada</Text>
+            </View>
+          )}
+        />
+
+        <TouchableOpacity 
+          style={styles.fab}
+          onPress={() => navigation.navigate("NewMessage")}
+        >
+          <LinearGradient
+            colors={[theme.colors.primary, theme.colors.secondary]}
+            style={styles.fabGradient}
+          >
+            <Feather name="edit-3" size={24} color={theme.colors.white} />
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <View style={styles.bottomTabBar}>
+          <LinearGradient
+            colors={['rgba(30, 41, 59, 0.95)', 'rgba(15, 23, 42, 0.95)']}
+            style={styles.tabBarGradient}
+          >
+            <TouchableOpacity style={styles.tabButton}>
+              <MaterialIcons name="home" size={24} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.tabButton}>
+              <Feather name="message-circle" size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.centerTabButton}>
+              <LinearGradient
+                colors={[theme.colors.primary, theme.colors.secondary]}
+                style={styles.centerTabGradient}
+              >
+                <Feather name="plus" size={28} color={theme.colors.white} />
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.tabButton}>
+              <Feather name="bar-chart" size={24} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.tabButton}>
+              <MaterialIcons name="person" size={24} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      </LinearGradient>
+    </SafeAreaView>
+  );
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -362,13 +425,19 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
     maxWidth: "80%",
   },
-  mensagemUsuarioAtual: {
-    alignSelf: "flex-end",
-    alignItems: "flex-end",
+  
+  notificationButton: {
+    position: 'relative',
   },
-  mensagemOutroUsuario: {
-    alignSelf: "flex-start",
-    alignItems: "flex-start",
+  
+  notificationDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.error,
   },
   usuarioNome: {
     fontSize: 12,
@@ -464,12 +533,15 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.md,
     color: theme.colors.textPrimary,
     fontSize: 16,
+    marginLeft: theme.spacing.sm,
+    marginRight: theme.spacing.sm,
   },
-  listaVazia: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 60,
+  
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.md,
   },
   textoListaVazia: {
     fontSize: 18,
@@ -477,9 +549,26 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.md,
     fontWeight: "500",
   },
-  subTextoListaVazia: {
+  
+  activeFilter: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.full,
+  },
+  
+  inactiveFilter: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  
+  activeFilterText: {
+    color: theme.colors.white,
     fontSize: 14,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.xs,
   },
 });
+
+export default MensagensScreen;*/

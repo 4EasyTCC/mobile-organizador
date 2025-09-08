@@ -11,7 +11,7 @@ import Etapa4 from "../screens/Etapa4";
 import Etapa5 from "../screens/Etapa5";
 import EventDetails from "../screens/EventDetails";
 import Perfil from "../screens/Perfil";
-import GruposScreen from "../screens/GruposScreen";
+
 const Stack = createStackNavigator();
 
 const RootNavigator = () => {
@@ -19,7 +19,7 @@ const RootNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="Login"
+        initialRouteName="Etapa1"
       >
         <Stack.Screen name="Login" component={Login}></Stack.Screen>
         <Stack.Screen name="EventDetails" component={EventDetails} />
@@ -27,21 +27,7 @@ const RootNavigator = () => {
         <Stack.Screen name="Etapa1" component={Etapa1}></Stack.Screen>
         <Stack.Screen name="Perfil" component={Perfil}></Stack.Screen>
         <Stack.Screen name="Etapa2" component={Etapa2}></Stack.Screen>
-        <Stack.Screen
-          name="Chat"
-          component={Chat}
-          options={{
-            headerShown: true,
-            title: "Chat",
-            headerStyle: {
-              backgroundColor: "#6A5ACD",
-            },
-            headerTintColor: "#fff",
-            headerTitleStyle: {
-              fontWeight: "bold",
-            },
-          }}
-        ></Stack.Screen>
+        <Stack.Screen name="Chat" component={Chat}></Stack.Screen>
         <Stack.Screen
           name="ImageSelector"
           component={ImageSelector}
@@ -49,10 +35,6 @@ const RootNavigator = () => {
         <Stack.Screen name="Etapa3" component={Etapa3}></Stack.Screen>
         <Stack.Screen name="Etapa4" component={Etapa4}></Stack.Screen>
         <Stack.Screen name="Etapa5" component={Etapa5}></Stack.Screen>
-        <Stack.Screen
-          name="GruposScreen"
-          component={GruposScreen}
-        ></Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   );
