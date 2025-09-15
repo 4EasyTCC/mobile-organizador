@@ -51,7 +51,7 @@ const theme = {
 };
 
 export default function ChatScreen({ route, navigation }) {
-const { grupoId, grupoNome } = route.params; 
+  const { grupoId, grupoNome } = route.params;
   const [mensagens, setMensagens] = useState([]);
   const [novaMensagem, setNovaMensagem] = useState("");
   const [carregando, setCarregando] = useState(true);
@@ -282,7 +282,7 @@ const { grupoId, grupoNome } = route.params;
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // Experimente este valor!
     >
       <FlatList
         ref={flatListRef}
@@ -442,6 +442,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: theme.colors.surface,
     color: theme.colors.white,
+    paddingBottom: 20,
   },
   botaoEnviar: {
     backgroundColor: theme.colors.primary,
