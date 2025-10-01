@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Switch,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, AntDesign } from "@expo/vector-icons";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "@env";
@@ -73,7 +73,7 @@ export default function Etapa5({ navigation }) {
         dataInicio: dadosEvento.dataInicio,
         dataFim: dadosEvento.dataFim || dadosEvento.dataInicio,
         localizacao: dadosEvento.localizacao,
-        fotos: dadosEvento.fotos || [], // Agora isso contém as URLs do servidor
+        fotos: dadosEvento.fotos || [],
         ingressos: ingressosComValoresPadrao,
         criarChat: criarChat,
       };
@@ -134,16 +134,18 @@ export default function Etapa5({ navigation }) {
   if (carregando) {
     return (
       <View style={styles.carregandoContainer}>
-        <ActivityIndicator size="large" color="#3F51B5" />
-        <Text>Carregando dados do evento...</Text>
+        <ActivityIndicator size="large" color="#4B0082" />
+        <Text style={styles.loadingText}>Carregando dados do evento...</Text>
       </View>
     );
   }
 
   if (!dadosEvento) {
     return (
-      <View style={styles.container}>
-        <Text>Não foi possível carregar os dados do evento</Text>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          Não foi possível carregar os dados do evento 😥
+        </Text>
         <TouchableOpacity
           style={styles.botaoVoltar}
           onPress={() => navigation.goBack()}
@@ -156,10 +158,13 @@ export default function Etapa5({ navigation }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.titulo}>Confirmação do Evento</Text>
+      <Text style={styles.titulo}>Confirmação do Evento 🎉</Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitulo}>Informações Básicas</Text>
+        <View style={styles.cardHeader}>
+          <MaterialIcons name="info-outline" size={24} color="#6A5ACD" />
+          <Text style={styles.cardTitulo}>Informações Básicas</Text>
+        </View>
         <View style={styles.item}>
           <Text style={styles.itemLabel}>Nome:</Text>
           <Text style={styles.itemValue}>{dadosEvento.nome}</Text>
@@ -182,7 +187,10 @@ export default function Etapa5({ navigation }) {
 
       {dadosEvento.localizacao && (
         <View style={styles.card}>
-          <Text style={styles.cardTitulo}>Localização</Text>
+          <View style={styles.cardHeader}>
+            <MaterialIcons name="location-on" size={24} color="#DC143C" />
+            <Text style={styles.cardTitulo}>Localização</Text>
+          </View>
           <Text style={styles.itemValue}>
             {dadosEvento.localizacao.endereco}
           </Text>
@@ -191,41 +199,55 @@ export default function Etapa5({ navigation }) {
 
       {dadosEvento.ingressos?.length > 0 && (
         <View style={styles.card}>
-          <Text style={styles.cardTitulo}>Ingressos</Text>
+          <View style={styles.cardHeader}>
+            <MaterialIcons name="local-activity" size={24} color="#FFA500" />
+            <Text style={styles.cardTitulo}>Ingressos</Text>
+          </View>
           {dadosEvento.ingressos.map((ingresso, index) => (
             <View key={index} style={styles.ingressoItem}>
               <Text style={styles.ingressoNome}>{ingresso.nome}</Text>
               <Text style={styles.ingressoDetalhes}>
                 R$ {ingresso.preco} • {ingresso.quantidade} vagas
               </Text>
+              {ingresso.descricao && (
+                <Text style={styles.ingressoDescricao}>
+                  {ingresso.descricao}
+                </Text>
+              )}
             </View>
           ))}
         </View>
       )}
 
-      {/* Nova seção para criar chat */}
       <View style={styles.card}>
-        <Text style={styles.cardTitulo}>Configurações de Chat</Text>
+        <View style={styles.cardHeader}>
+          <MaterialIcons name="chat" size={24} color="#20B2AA" />
+          <Text style={styles.cardTitulo}>Configurações de Chat</Text>
+        </View>
         <View style={styles.chatOption}>
           <Text style={styles.chatOptionText}>
-            Criar grupo de chat automaticamente
+            Criar grupo de chat para o evento
           </Text>
           <Switch
             value={criarChat}
             onValueChange={setCriarChat}
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
+            trackColor={{ false: "#ccc", true: "#81b0ff" }}
             thumbColor={criarChat ? "#3F51B5" : "#f4f3f4"}
           />
         </View>
         <Text style={styles.chatDescription}>
-          Um grupo de chat será criado com o nome do evento para conversas entre
-          organizadores e participantes.
+          Um grupo de chat será criado automaticamente para os participantes do
+          evento.
         </Text>
       </View>
 
-      <TouchableOpacity style={styles.botaoConfirmar} onPress={enviarEvento}>
+      <TouchableOpacity
+        style={styles.botaoConfirmar}
+        onPress={enviarEvento}
+        activeOpacity={0.8}
+      >
+        <AntDesign name="checkcircleo" size={20} color="white" />
         <Text style={styles.botaoTexto}>Confirmar e Criar Evento</Text>
-        <MaterialIcons name="check-circle" size={24} color="white" />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -241,106 +263,148 @@ export default function Etapa5({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 20,
-    backgroundColor: "#f5f5f5",
+    padding: 24,
+    backgroundColor: "#F0F4F8", // Cor de fundo suave
   },
   titulo: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 28,
+    fontWeight: "800",
     textAlign: "center",
-    marginBottom: 20,
-    color: "#333",
+    marginBottom: 30,
+    color: "#4B0082", // Um roxo escuro
   },
   card: {
     backgroundColor: "white",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
   },
   cardTitulo: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#3F51B5",
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#333",
+    marginLeft: 8,
   },
   item: {
     flexDirection: "row",
-    marginBottom: 8,
+    marginBottom: 10,
+    alignItems: "center",
   },
   itemLabel: {
-    fontWeight: "bold",
-    width: 100,
+    fontWeight: "600",
+    width: 110,
     color: "#555",
+    fontSize: 15,
   },
   itemValue: {
     flex: 1,
     color: "#333",
+    fontSize: 15,
+    lineHeight: 22,
   },
   ingressoItem: {
-    marginBottom: 10,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth, // Linha fina para separar
+    borderBottomColor: "#E0E0E0",
   },
   ingressoNome: {
     fontWeight: "bold",
-    color: "#333",
+    color: "#1A1A1A",
+    fontSize: 16,
   },
   ingressoDetalhes: {
     color: "#666",
+    fontSize: 14,
+    marginTop: 4,
+  },
+  ingressoDescricao: {
+    color: "#888",
+    fontSize: 12,
+    marginTop: 4,
+    fontStyle: "italic",
   },
   chatOption: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   chatOptionText: {
     fontSize: 16,
     color: "#333",
     flex: 1,
     marginRight: 10,
+    fontWeight: "500",
   },
   chatDescription: {
-    fontSize: 12,
-    color: "#666",
+    fontSize: 13,
+    color: "#777",
     fontStyle: "italic",
   },
   botaoConfirmar: {
     backgroundColor: "#4CAF50",
-    padding: 15,
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 10,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 25,
+    shadowColor: "#4CAF50",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
   },
   botaoTexto: {
     color: "white",
     fontWeight: "bold",
-    marginRight: 10,
-    fontSize: 16,
+    marginLeft: 10,
+    fontSize: 18,
   },
   botaoVoltar: {
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 15,
   },
   botaoTextoVoltar: {
-    color: "#3F51B5",
-    fontWeight: "bold",
+    color: "#6A5ACD", // Roxo suave
+    fontWeight: "600",
+    fontSize: 16,
   },
   carregandoContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#F0F4F8",
+  },
+  loadingText: {
+    marginTop: 10,
+    color: "#555",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F0F4F8",
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    color: "#D9534F",
+    textAlign: "center",
+    marginBottom: 20,
   },
 });

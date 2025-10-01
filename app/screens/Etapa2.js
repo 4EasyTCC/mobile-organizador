@@ -12,10 +12,10 @@ import {
   Alert,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Mapa({ navigation, route }) {
   const [region, setRegion] = useState({
@@ -31,7 +31,6 @@ export default function Mapa({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const mapRef = useRef(null);
 
-  // Função para buscar o endereço na API
   const handleSearch = async () => {
     if (searchText.length < 3) {
       setResults([]);
@@ -92,11 +91,8 @@ export default function Mapa({ navigation, route }) {
 
       await AsyncStorage.setItem("@evento", JSON.stringify(dadosAtualizados));
       navigation.navigate("Etapa3");
-
-      const dadosSalvos = await AsyncStorage.getItem("@evento");
-      console.log("Dados salvos no AsyncStorage:", JSON.parse(dadosSalvos));
     } catch (error) {
-      console.error("Erro ao salvar dados da Etapa 1:", error);
+      console.error("Erro ao salvar dados:", error);
       Alert.alert("Erro", "Não foi possível salvar os dados");
     }
   };
@@ -126,30 +122,39 @@ export default function Mapa({ navigation, route }) {
               longitude: selectedPlace.geometry.lng,
             }}
           >
-            <View style={styles.marker}>
-              <MaterialIcons name="location-on" size={32} color="#3F51B5" />
+            <View style={styles.customMarker}>
+              <View style={styles.markerPulse} />
+              <Ionicons name="location" size={48} color="#1400b4" />
             </View>
           </Marker>
         )}
       </MapView>
 
       <View style={styles.searchContainer}>
-        <MaterialIcons
+        <Ionicons
           name="search"
-          size={24}
-          color="#666"
+          size={22}
+          color="#7575a3"
           style={styles.searchIcon}
         />
         <TextInput
           style={styles.input}
-          placeholder="Buscar endereço"
-          placeholderTextColor="#999"
+          placeholder="Buscar endereço do evento"
+          placeholderTextColor="#a0a0b8"
           value={searchText}
           onChangeText={setSearchText}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
         />
-        {loading && <ActivityIndicator size="small" color="#3F51B5" />}
+        {loading && <ActivityIndicator size="small" color="#1400b4" />}
+        {searchText.length > 0 && (
+          <TouchableOpacity onPress={() => {
+            setSearchText("");
+            setResults([]);
+          }}>
+            <Ionicons name="close-circle" size={22} color="#a0a0b8" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {results.length > 0 && (
@@ -162,8 +167,12 @@ export default function Mapa({ navigation, route }) {
                 style={styles.resultItem}
                 onPress={() => selectLocation(item)}
               >
-                <MaterialIcons name="place" size={20} color="#3F51B5" />
-                <Text style={styles.resultText}>{item.formatted}</Text>
+                <View style={styles.resultIcon}>
+                  <Ionicons name="location-outline" size={20} color="#1400b4" />
+                </View>
+                <Text style={styles.resultText} numberOfLines={2}>
+                  {item.formatted}
+                </Text>
               </TouchableOpacity>
             )}
           />
@@ -173,16 +182,23 @@ export default function Mapa({ navigation, route }) {
       <Modal
         visible={showConfirmation}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowConfirmation(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Confirmar localização</Text>
+            <View style={styles.modalHeader}>
+              <Ionicons name="checkmark-circle" size={48} color="#1400b4" />
+            </View>
+            
+            <Text style={styles.modalTitle}>Confirmar Localização</Text>
+            <Text style={styles.modalSubtitle}>
+              Este será o endereço do seu evento
+            </Text>
 
             <View style={styles.locationCard}>
-              <MaterialIcons name="location-on" size={28} color="#3F51B5" />
-              <Text style={styles.locationText} numberOfLines={2}>
+              <Ionicons name="location" size={24} color="#1400b4" />
+              <Text style={styles.locationText} numberOfLines={3}>
                 {selectedPlace?.formatted || "Local selecionado"}
               </Text>
             </View>
@@ -192,16 +208,15 @@ export default function Mapa({ navigation, route }) {
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setShowConfirmation(false)}
               >
-                <Text style={styles.buttonText}>Corrigir</Text>
+                <Text style={styles.cancelButtonText}>Corrigir</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={confirmLocation}
               >
-                <Text style={[styles.buttonText, { color: "white" }]}>
-                  Confirmar
-                </Text>
+                <Text style={styles.confirmButtonText}>Confirmar</Text>
+                <Ionicons name="arrow-forward" size={18} color="#ffffff" />
               </TouchableOpacity>
             </View>
           </View>
@@ -212,8 +227,10 @@ export default function Mapa({ navigation, route }) {
         <TouchableOpacity
           style={styles.floatingButton}
           onPress={() => setShowConfirmation(true)}
+          activeOpacity={0.9}
         >
-          <Text style={styles.floatingButtonText}>Confirmar local</Text>
+          <Ionicons name="checkmark-circle-outline" size={24} color="#ffffff" />
+          <Text style={styles.floatingButtonText}>Confirmar Localização</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -223,7 +240,7 @@ export default function Mapa({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8f9fd",
   },
   map: {
     width: "100%",
@@ -231,121 +248,185 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     position: "absolute",
-    top: 20,
+    top: 60,
     left: 20,
     right: 20,
     backgroundColor: "white",
-    borderRadius: 25,
-    paddingHorizontal: 15,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
     flexDirection: "row",
     alignItems: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    elevation: 8,
+    shadowColor: "#1400b4",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   input: {
     flex: 1,
-    height: 50,
-    color: "#333",
+    height: 52,
+    color: "#1a1a2e",
+    fontSize: 16,
   },
   resultsContainer: {
     position: "absolute",
-    top: 80,
+    top: 130,
     left: 20,
     right: 20,
-    maxHeight: 200,
+    maxHeight: 280,
     backgroundColor: "white",
-    borderRadius: 10,
-    elevation: 3,
-    paddingVertical: 5,
+    borderRadius: 20,
+    elevation: 8,
+    shadowColor: "#1400b4",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    overflow: "hidden",
   },
   resultItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#f0f0f5",
   },
-  resultText: {
-    marginLeft: 10,
-    color: "#555",
-    flex: 1,
-  },
-  marker: {
+  resultIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#f0edff",
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 12,
+  },
+  resultText: {
+    flex: 1,
+    color: "#1a1a2e",
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  customMarker: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  markerPulse: {
+    position: "absolute",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#1400b4",
+    opacity: 0.2,
   },
   floatingButton: {
     position: "absolute",
-    bottom: 30,
+    bottom: 40,
     left: 20,
     right: 20,
-    backgroundColor: "#3F51B5",
-    padding: 15,
-    borderRadius: 25,
+    backgroundColor: "#1400b4",
+    padding: 20,
+    borderRadius: 20,
+    flexDirection: "row",
     alignItems: "center",
-    elevation: 3,
+    justifyContent: "center",
+    elevation: 8,
+    shadowColor: "#1400b4",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
   },
   floatingButtonText: {
     color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
+    fontWeight: "700",
+    fontSize: 17,
+    marginLeft: 10,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(26, 26, 46, 0.75)",
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
   modalContainer: {
     width: width - 40,
     backgroundColor: "white",
-    borderRadius: 15,
-    padding: 20,
+    borderRadius: 24,
+    padding: 28,
+    alignItems: "center",
+  },
+  modalHeader: {
+    marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 20,
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#1a1a2e",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 15,
+    color: "#7575a3",
+    marginBottom: 24,
     textAlign: "center",
   },
   locationCard: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
+    alignItems: "flex-start",
+    backgroundColor: "#f8f9fd",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: "#e8e8f0",
+    width: "100%",
   },
   locationText: {
-    marginLeft: 10,
-    color: "#555",
+    marginLeft: 12,
+    color: "#1a1a2e",
+    fontSize: 15,
     flex: 1,
+    lineHeight: 22,
   },
   buttonRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 12,
+    width: "100%",
   },
   modalButton: {
     flex: 1,
-    padding: 12,
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 16,
     alignItems: "center",
-    marginHorizontal: 5,
+    justifyContent: "center",
+    flexDirection: "row",
   },
   cancelButton: {
-    backgroundColor: "#f1f1f1",
+    backgroundColor: "#f0f0f5",
+    borderWidth: 2,
+    borderColor: "#e8e8f0",
   },
   confirmButton: {
-    backgroundColor: "#3F51B5",
+    backgroundColor: "#1400b4",
+    shadowColor: "#1400b4",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  buttonText: {
-    fontWeight: "bold",
+  cancelButtonText: {
+    fontWeight: "700",
+    color: "#7575a3",
+    fontSize: 16,
+  },
+  confirmButtonText: {
+    fontWeight: "700",
+    color: "#ffffff",
+    fontSize: 16,
+    marginRight: 8,
   },
 });

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons"; // ícone de seta
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Etapa1({ navigation }) {
   const [evento, setEvento] = useState({
@@ -34,40 +34,55 @@ export default function Etapa1({ navigation }) {
   const SelectInput = ({ title, value, options, onSelect, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
-      <View style={{ marginBottom: 20 }}>
+      <View style={{ marginBottom: 24 }}>
         <Text
           style={{
-            fontSize: 16,
-            color: "#1400b4",
-            marginBottom: 8,
-            fontWeight: "500",
+            fontSize: 15,
+            color: "#1a1a2e",
+            marginBottom: 10,
+            fontWeight: "600",
+            letterSpacing: 0.3,
           }}
         >
           {title}
         </Text>
         <TouchableOpacity
           style={{
-            backgroundColor: "#f0f0f0",
-            padding: 16,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: "#ddd",
+            backgroundColor: "#ffffff",
+            padding: 18,
+            borderRadius: 16,
+            borderWidth: 2,
+            borderColor: isOpen ? "#1400b4" : "#e8e8f0",
+            shadowColor: "#1400b4",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 8,
+            elevation: 3,
           }}
           onPress={() => setIsOpen(!isOpen)}
         >
-          <Text style={{ fontSize: 16, color: value ? "#1400b4" : "#8E8E93" }}>
-            {value || placeholder}
-          </Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={{ fontSize: 16, color: value ? "#1400b4" : "#a0a0b8", fontWeight: value ? "500" : "400" }}>
+              {value || placeholder}
+            </Text>
+            <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={20} color="#1400b4" />
+          </View>
         </TouchableOpacity>
 
         {isOpen && (
           <View
             style={{
-              backgroundColor: "#f0f0f0",
-              borderRadius: 12,
+              backgroundColor: "#ffffff",
+              borderRadius: 16,
               marginTop: 8,
-              borderWidth: 1,
-              borderColor: "#ddd",
+              borderWidth: 2,
+              borderColor: "#e8e8f0",
+              overflow: "hidden",
+              shadowColor: "#1400b4",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.12,
+              shadowRadius: 12,
+              elevation: 5,
             }}
           >
             {options.map((option, index) => (
@@ -78,12 +93,15 @@ export default function Etapa1({ navigation }) {
                   setIsOpen(false);
                 }}
                 style={{
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#ddd",
+                  padding: 18,
+                  borderBottomWidth: index < options.length - 1 ? 1 : 0,
+                  borderBottomColor: "#f0f0f5",
+                  backgroundColor: value === option ? "#f0edff" : "#ffffff",
                 }}
               >
-                <Text style={{ fontSize: 16, color: "#1400b4" }}>{option}</Text>
+                <Text style={{ fontSize: 16, color: "#1400b4", fontWeight: value === option ? "600" : "400" }}>
+                  {option}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -109,62 +127,86 @@ export default function Etapa1({ navigation }) {
     };
 
     const formatDate = (date) => {
-      return `${date.toLocaleDateString("pt-BR")} às ${date.toLocaleTimeString(
-        "pt-BR",
-        {
-          hour: "2-digit",
-          minute: "2-digit",
-        }
-      )}`;
+      return date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+    };
+
+    const formatTime = (date) => {
+      return date.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     };
 
     return (
-      <View style={{ marginBottom: 20 }}>
+      <View style={{ marginBottom: 24 }}>
         <Text
           style={{
-            fontSize: 16,
-            color: "#1400b4",
-            marginBottom: 8,
-            fontWeight: "500",
+            fontSize: 15,
+            color: "#1a1a2e",
+            marginBottom: 10,
+            fontWeight: "600",
+            letterSpacing: 0.3,
           }}
         >
           {title}
         </Text>
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <View style={{ flexDirection: "row", gap: 12 }}>
           <TouchableOpacity
             style={{
-              backgroundColor: "#f0f0f0",
-              padding: 16,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#ddd",
+              backgroundColor: "#ffffff",
+              padding: 18,
+              borderRadius: 16,
+              borderWidth: 2,
+              borderColor: "#e8e8f0",
               flex: 1,
-              marginRight: 8,
+              shadowColor: "#1400b4",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
             }}
             onPress={() => showMode("date")}
           >
-            <Text
-              style={{ fontSize: 16, color: "#1400b4", textAlign: "center" }}
-            >
-              {formatDate(date)}
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View>
+                <Text style={{ fontSize: 12, color: "#7575a3", marginBottom: 4 }}>Data</Text>
+                <Text style={{ fontSize: 15, color: "#1400b4", fontWeight: "600" }}>
+                  {formatDate(date)}
+                </Text>
+              </View>
+              <Ionicons name="calendar-outline" size={22} color="#1400b4" />
+            </View>
           </TouchableOpacity>
+          
           <TouchableOpacity
             style={{
-              backgroundColor: "#f0f0f0",
-              padding: 16,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#ddd",
-              flex: 0.5,
+              backgroundColor: "#ffffff",
+              padding: 18,
+              borderRadius: 16,
+              borderWidth: 2,
+              borderColor: "#e8e8f0",
+              width: 120,
+              shadowColor: "#1400b4",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
             }}
             onPress={() => showMode("time")}
           >
-            <Text
-              style={{ fontSize: 16, color: "#1400b4", textAlign: "center" }}
-            >
-              Alterar Hora
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View>
+                <Text style={{ fontSize: 12, color: "#7575a3", marginBottom: 4 }}>Hora</Text>
+                <Text style={{ fontSize: 15, color: "#1400b4", fontWeight: "600" }}>
+                  {formatTime(date)}
+                </Text>
+              </View>
+              <Ionicons name="time-outline" size={22} color="#1400b4" />
+            </View>
           </TouchableOpacity>
         </View>
         {showPicker && (
@@ -192,7 +234,7 @@ export default function Etapa1({ navigation }) {
 
     try {
       await AsyncStorage.setItem("@evento", JSON.stringify(evento));
-      navigation.navigate("Etapa2"); // Navega para Etapa2
+      navigation.navigate("Etapa2");
     } catch (error) {
       console.error("Erro ao salvar dados da Etapa 1:", error);
       Alert.alert("Erro", "Não foi possível salvar os dados");
@@ -201,21 +243,25 @@ export default function Etapa1({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#1400b4" }}>
-      {/* Topo com seta e logo */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
           paddingTop: 60,
           paddingBottom: 20,
-          paddingHorizontal: 20,
+          paddingHorizontal: 24,
         }}
       >
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={{ marginRight: 20 }}
+          style={{ 
+            marginRight: 20,
+            backgroundColor: "rgba(255,255,255,0.2)",
+            padding: 10,
+            borderRadius: 12,
+          }}
         >
-          <Ionicons name="arrow-back" size={28} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Image
           source={require("../imagens/branca.png")}
@@ -223,81 +269,124 @@ export default function Etapa1({ navigation }) {
         />
       </View>
 
-      {/* Conteúdo */}
       <ScrollView
         contentContainerStyle={{
-          backgroundColor: "#ffffff",
-          borderTopLeftRadius: 30,
-          borderTopRightRadius: 30,
+          backgroundColor: "#f8f9fd",
+          borderTopLeftRadius: 32,
+          borderTopRightRadius: 32,
           padding: 24,
           paddingBottom: 40,
           flexGrow: 1,
         }}
+        showsVerticalScrollIndicator={false}
       >
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: "bold",
-            color: "#1400b4",
-            marginBottom: 24,
-          }}
-        >
-          1. INFORMAÇÕES DO EVENTO
-        </Text>
-
-        <View style={{ marginBottom: 20 }}>
+        <View style={{ 
+          backgroundColor: "#1400b4",
+          paddingVertical: 12,
+          paddingHorizontal: 20,
+          borderRadius: 20,
+          marginBottom: 28,
+          alignSelf: "flex-start",
+        }}>
           <Text
             style={{
               fontSize: 16,
-              color: "#1400b4",
-              marginBottom: 8,
-              fontWeight: "500",
+              fontWeight: "700",
+              color: "#ffffff",
+              letterSpacing: 1,
+            }}
+          >
+            ETAPA 1 DE 5
+          </Text>
+        </View>
+
+        <Text
+          style={{
+            fontSize: 26,
+            fontWeight: "800",
+            color: "#1a1a2e",
+            marginBottom: 8,
+          }}
+        >
+          Informações do Evento
+        </Text>
+        
+        <Text
+          style={{
+            fontSize: 15,
+            color: "#7575a3",
+            marginBottom: 32,
+            lineHeight: 22,
+          }}
+        >
+          Preencha os detalhes básicos para começar a criar seu evento
+        </Text>
+
+        <View style={{ marginBottom: 24 }}>
+          <Text
+            style={{
+              fontSize: 15,
+              color: "#1a1a2e",
+              marginBottom: 10,
+              fontWeight: "600",
+              letterSpacing: 0.3,
             }}
           >
             Nome do Evento
           </Text>
           <TextInput
             style={{
-              backgroundColor: "#f0f0f0",
-              color: "#333",
+              backgroundColor: "#ffffff",
+              color: "#1a1a2e",
               fontSize: 16,
-              padding: 16,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#ddd",
+              padding: 18,
+              borderRadius: 16,
+              borderWidth: 2,
+              borderColor: "#e8e8f0",
+              shadowColor: "#1400b4",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
             }}
-            placeholder="Digite o nome do evento"
-            placeholderTextColor="#999"
+            placeholder="Ex: Festival de Música 2025"
+            placeholderTextColor="#a0a0b8"
             value={evento.nome}
             onChangeText={(texto) => setEvento({ ...evento, nome: texto })}
           />
         </View>
 
-        <View style={{ marginBottom: 20 }}>
+        <View style={{ marginBottom: 24 }}>
           <Text
             style={{
-              fontSize: 16,
-              color: "#1400b4",
-              marginBottom: 8,
-              fontWeight: "500",
+              fontSize: 15,
+              color: "#1a1a2e",
+              marginBottom: 10,
+              fontWeight: "600",
+              letterSpacing: 0.3,
             }}
           >
             Descrição
           </Text>
           <TextInput
             style={{
-              backgroundColor: "#f0f0f0",
-              color: "#333",
+              backgroundColor: "#ffffff",
+              color: "#1a1a2e",
               fontSize: 16,
-              padding: 16,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#ddd",
-              height: 100,
+              padding: 18,
+              borderRadius: 16,
+              borderWidth: 2,
+              borderColor: "#e8e8f0",
+              height: 120,
               textAlignVertical: "top",
+              shadowColor: "#1400b4",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
             }}
-            placeholder="Descreva seu evento..."
-            placeholderTextColor="#999"
+            placeholder="Conte aos participantes sobre seu evento..."
+            placeholderTextColor="#a0a0b8"
             value={evento.descricao}
             onChangeText={(texto) => setEvento({ ...evento, descricao: texto })}
             multiline
@@ -339,17 +428,24 @@ export default function Etapa1({ navigation }) {
         <TouchableOpacity
           style={{
             backgroundColor: "#1400b4",
-            padding: 18,
-            borderRadius: 14,
-            marginTop: 32,
+            padding: 20,
+            borderRadius: 18,
+            marginTop: 40,
             alignItems: "center",
             justifyContent: "center",
+            flexDirection: "row",
+            shadowColor: "#1400b4",
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.3,
+            shadowRadius: 16,
+            elevation: 8,
           }}
           onPress={avancar}
         >
-          <Text style={{ color: "#ffffff", fontSize: 18, fontWeight: "600" }}>
+          <Text style={{ color: "#ffffff", fontSize: 18, fontWeight: "700", marginRight: 8 }}>
             Continuar
           </Text>
+          <Ionicons name="arrow-forward" size={20} color="#ffffff" />
         </TouchableOpacity>
       </ScrollView>
     </View>
