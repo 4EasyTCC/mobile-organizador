@@ -8,11 +8,46 @@ import {
   Alert,
   ActivityIndicator,
   Switch,
+  StatusBar,
 } from "react-native";
-import { MaterialIcons, AntDesign } from "@expo/vector-icons";
+import { MaterialIcons, AntDesign, Ionicons, Feather } from "@expo/vector-icons";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "@env";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+
+// Definição do tema para consistência
+const theme = {
+  colors: {
+    primary: "#6366F1", // Indigo
+    primaryDark: "#4F46E5",
+    secondary: "#8B5CF6", // Violet/Fuchsia-ish
+    background: "#0F172A", // Dark Blue/Slate
+    backgroundSecondary: "#1E293B", // Slightly lighter Dark Blue/Slate
+    surface: "#334155", // Even lighter Slate
+    white: "#FFFFFF",
+    textPrimary: "#F1F5F9", // Off-white
+    textSecondary: "#94A3B8", // Light Slate/Gray
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 9999,
+  },
+};
 
 export default function Etapa5({ navigation }) {
   const [dadosEvento, setDadosEvento] = useState(null);
@@ -29,7 +64,7 @@ export default function Etapa5({ navigation }) {
 
         if (!dadosEvento) {
           Alert.alert("Erro", "Não foi possível carregar os dados do evento");
-          navigation.goBack();
+          navigation.navigate("Etapa1"); // Volta para o início se não houver dados
           return;
         }
 
@@ -37,7 +72,7 @@ export default function Etapa5({ navigation }) {
       } catch (error) {
         console.error("Erro ao carregar evento:", error);
         Alert.alert("Erro", "Falha ao carregar dados");
-        navigation.goBack();
+        navigation.navigate("Etapa1");
       } finally {
         setCarregando(false);
       }
@@ -56,6 +91,8 @@ export default function Etapa5({ navigation }) {
         return;
       }
 
+      setCarregando(true);
+
       const ingressosComValoresPadrao =
         dadosEvento.ingressos?.map((ingresso) => ({
           nome: ingresso.nome || "Ingresso",
@@ -64,19 +101,22 @@ export default function Etapa5({ navigation }) {
           descricao: ingresso.descricao || "",
           dataLimiteVenda: ingresso.dataLimiteVenda || null,
         })) || [];
+      
+const fotosParaEnviar = dadosEvento.fotos || []; 
 
-      const dadosParaEnviar = {
-        nome: dadosEvento.nome,
-        descricao: dadosEvento.descricao,
-        tipo: dadosEvento.tipo,
-        privacidade: dadosEvento.privacidade,
-        dataInicio: dadosEvento.dataInicio,
-        dataFim: dadosEvento.dataFim || dadosEvento.dataInicio,
-        localizacao: dadosEvento.localizacao,
-        fotos: dadosEvento.fotos || [],
-        ingressos: ingressosComValoresPadrao,
-        criarChat: criarChat,
-      };
+const dadosParaEnviar = {
+    nome: dadosEvento.nome,
+    descricao: dadosEvento.descricao,
+    tipo: dadosEvento.tipo,
+    privacidade: dadosEvento.privacidade,
+    dataInicio: new Date(dadosEvento.dataInicio).toISOString(), 
+    dataFim: new Date(dadosEvento.dataFim || dadosEvento.dataInicio).toISOString(),
+    localizacao: dadosEvento.localizacao,
+    fotos: fotosParaEnviar, 
+    ingressos: ingressosComValoresPadrao,
+    criarChat: criarChat,
+};
+
 
       console.log("Enviando dados:", dadosParaEnviar);
 
@@ -118,6 +158,8 @@ export default function Etapa5({ navigation }) {
       }
 
       Alert.alert("Erro", mensagemErro);
+    } finally {
+        setCarregando(false);
     }
   };
 
@@ -134,7 +176,7 @@ export default function Etapa5({ navigation }) {
   if (carregando) {
     return (
       <View style={styles.carregandoContainer}>
-        <ActivityIndicator size="large" color="#4B0082" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
         <Text style={styles.loadingText}>Carregando dados do evento...</Text>
       </View>
     );
@@ -148,239 +190,336 @@ export default function Etapa5({ navigation }) {
         </Text>
         <TouchableOpacity
           style={styles.botaoVoltar}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate("Etapa1")}
         >
-          <Text style={styles.botaoTextoVoltar}>Voltar</Text>
+          <Text style={styles.botaoTextoVoltar}>Voltar para o Início</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  const capa = dadosEvento.midia?.find(m => m.tipo === 'capa') || dadosEvento.fotos?.find(m => m.tipo === 'capa');
+
+  const getStepNavigation = (step) => {
+    switch (step) {
+      case 'Geral': return 'Etapa1';
+      case 'Local': return 'Etapa2';
+      case 'Mídia': return 'Etapa3';
+      case 'Ingressos': return 'Etapa4';
+      default: return null;
+    }
+  };
+
+  const renderInfoItem = (label, value, stepKey = null) => (
+    <View style={styles.item}>
+        <Text style={styles.itemLabel}>{label}</Text>
+        <Text style={styles.itemValue}>{value}</Text>
+        {stepKey && (
+            <TouchableOpacity 
+                onPress={() => navigation.navigate(getStepNavigation(stepKey))}
+                style={styles.editButton}
+            >
+                <Feather name="edit-3" size={16} color={theme.colors.primary} />
+            </TouchableOpacity>
+        )}
+    </View>
+  );
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.titulo}>Confirmação do Evento 🎉</Text>
-
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="info-outline" size={24} color="#6A5ACD" />
-          <Text style={styles.cardTitulo}>Informações Básicas</Text>
-        </View>
-        <View style={styles.item}>
-          <Text style={styles.itemLabel}>Nome:</Text>
-          <Text style={styles.itemValue}>{dadosEvento.nome}</Text>
-        </View>
-        <View style={styles.item}>
-          <Text style={styles.itemLabel}>Descrição:</Text>
-          <Text style={styles.itemValue}>{dadosEvento.descricao}</Text>
-        </View>
-        <View style={styles.item}>
-          <Text style={styles.itemLabel}>Tipo:</Text>
-          <Text style={styles.itemValue}>{dadosEvento.tipo}</Text>
-        </View>
-        <View style={styles.item}>
-          <Text style={styles.itemLabel}>Data:</Text>
-          <Text style={styles.itemValue}>
-            {formatarData(dadosEvento.dataInicio)}
-          </Text>
-        </View>
-      </View>
-
-      {dadosEvento.localizacao && (
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <MaterialIcons name="location-on" size={24} color="#DC143C" />
-            <Text style={styles.cardTitulo}>Localização</Text>
-          </View>
-          <Text style={styles.itemValue}>
-            {dadosEvento.localizacao.endereco}
-          </Text>
-        </View>
-      )}
-
-      {dadosEvento.ingressos?.length > 0 && (
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <MaterialIcons name="local-activity" size={24} color="#FFA500" />
-            <Text style={styles.cardTitulo}>Ingressos</Text>
-          </View>
-          {dadosEvento.ingressos.map((ingresso, index) => (
-            <View key={index} style={styles.ingressoItem}>
-              <Text style={styles.ingressoNome}>{ingresso.nome}</Text>
-              <Text style={styles.ingressoDetalhes}>
-                R$ {ingresso.preco} • {ingresso.quantidade} vagas
-              </Text>
-              {ingresso.descricao && (
-                <Text style={styles.ingressoDescricao}>
-                  {ingresso.descricao}
-                </Text>
-              )}
+    <SafeAreaView style={styles.safeArea}>
+        <StatusBar
+            barStyle="light-content"
+            backgroundColor={theme.colors.background}
+        />
+        <ScrollView contentContainerStyle={styles.container}>
+            
+            <View style={styles.headerTitleContainer}>
+                <Ionicons name="sparkles" size={32} color={theme.colors.secondary} />
+                <Text style={styles.titulo}>Confirmação Final</Text>
             </View>
-          ))}
-        </View>
-      )}
 
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="chat" size={24} color="#20B2AA" />
-          <Text style={styles.cardTitulo}>Configurações de Chat</Text>
-        </View>
-        <View style={styles.chatOption}>
-          <Text style={styles.chatOptionText}>
-            Criar grupo de chat para o evento
-          </Text>
-          <Switch
-            value={criarChat}
-            onValueChange={setCriarChat}
-            trackColor={{ false: "#ccc", true: "#81b0ff" }}
-            thumbColor={criarChat ? "#3F51B5" : "#f4f3f4"}
-          />
-        </View>
-        <Text style={styles.chatDescription}>
-          Um grupo de chat será criado automaticamente para os participantes do
-          evento.
-        </Text>
-      </View>
+            {/* CARD 1: Informações Básicas */}
+            <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <MaterialIcons name="info-outline" size={24} color={theme.colors.primary} />
+                    <Text style={styles.cardTitulo}>1. Informações Básicas</Text>
+                </View>
+                {renderInfoItem('Nome:', dadosEvento.nome, 'Geral')}
+                {renderInfoItem('Tipo:', dadosEvento.tipo, 'Geral')}
+                {renderInfoItem('Privacidade:', dadosEvento.privacidade, 'Geral')}
+                {renderInfoItem('Data Início:', formatarData(dadosEvento.dataInicio), 'Geral')}
+                
+                <View style={styles.descriptionContainer}>
+                    <Text style={styles.descriptionLabel}>Descrição:</Text>
+                    <Text style={styles.itemValue}>{dadosEvento.descricao}</Text>
+                </View>
+            </View>
 
-      <TouchableOpacity
-        style={styles.botaoConfirmar}
-        onPress={enviarEvento}
-        activeOpacity={0.8}
-      >
-        <AntDesign name="checkcircleo" size={20} color="white" />
-        <Text style={styles.botaoTexto}>Confirmar e Criar Evento</Text>
-      </TouchableOpacity>
+            {/* CARD 2: Localização */}
+            {dadosEvento.localizacao && (
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        <MaterialIcons name="location-on" size={24} color={theme.colors.warning} />
+                        <Text style={styles.cardTitulo}>2. Localização</Text>
+                    </View>
+                    {renderInfoItem('Endereço:', dadosEvento.localizacao.endereco, 'Local')}
+                    {renderInfoItem('Cidade/Estado:', `${dadosEvento.localizacao.cidade || ''} / ${dadosEvento.localizacao.estado || ''}`, 'Local')}
+                </View>
+            )}
 
-      <TouchableOpacity
-        style={styles.botaoVoltar}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.botaoTextoVoltar}>Voltar para editar</Text>
-      </TouchableOpacity>
-    </ScrollView>
+            {/* CARD 3: Mídia */}
+            <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <MaterialIcons name="image" size={24} color={theme.colors.secondary} />
+                    <Text style={styles.cardTitulo}>3. Mídia</Text>
+                </View>
+                {renderInfoItem('Foto de Capa:', capa ? 'Adicionada' : 'Faltando', 'Mídia')}
+                {renderInfoItem('Fotos na Galeria:', `${dadosEvento.midia?.filter(m => m.tipo === 'galeria').length || 0} fotos`, 'Mídia')}
+            </View>
+
+
+            {/* CARD 4: Ingressos */}
+            <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <MaterialIcons name="local-activity" size={24} color={theme.colors.success} />
+                    <Text style={styles.cardTitulo}>4. Ingressos</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Etapa4')} style={styles.editButtonHeader}>
+                         <Feather name="edit-3" size={18} color={theme.colors.primary} />
+                    </TouchableOpacity>
+                </View>
+                {dadosEvento.ingressos?.length > 0 ? (
+                    dadosEvento.ingressos.map((ingresso, index) => (
+                        <View key={index} style={styles.ingressoItem}>
+                            <Text style={styles.ingressoNome}>{ingresso.nome}</Text>
+                            <Text style={styles.ingressoDetalhes}>
+                                R$ {ingresso.preco?.toFixed(2).replace('.', ',')} • {ingresso.quantidade} vagas
+                            </Text>
+                        </View>
+                    ))
+                ) : (
+                    <Text style={styles.emptyText}>Nenhum ingresso configurado.</Text>
+                )}
+            </View>
+
+            {/* CARD 5: Configurações */}
+            <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <MaterialIcons name="chat" size={24} color={theme.colors.primary} />
+                    <Text style={styles.cardTitulo}>5. Configurações de Chat</Text>
+                </View>
+                <View style={styles.chatOption}>
+                    <Text style={styles.chatOptionText}>
+                        Criar grupo de chat para o evento
+                    </Text>
+                    <Switch
+                        value={criarChat}
+                        onValueChange={setCriarChat}
+                        trackColor={{ false: theme.colors.surface, true: theme.colors.primary }}
+                        thumbColor={criarChat ? theme.colors.white : theme.colors.textSecondary}
+                        ios_backgroundColor={theme.colors.surface}
+                    />
+                </View>
+                <Text style={styles.chatDescription}>
+                    Um grupo de chat será criado automaticamente para os participantes.
+                </Text>
+            </View>
+
+            {/* BOTÃO FINAL */}
+            <TouchableOpacity
+                style={[styles.botaoConfirmar, carregando && styles.botaoConfirmarDisabled]}
+                onPress={enviarEvento}
+                activeOpacity={0.8}
+                disabled={carregando}
+            >
+                <LinearGradient
+                    colors={carregando ? [theme.colors.surface, theme.colors.surface] : [theme.colors.success, '#1f9b7c']}
+                    style={styles.botaoConfirmarGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    {carregando ? (
+                        <ActivityIndicator size="small" color={theme.colors.white} />
+                    ) : (
+                        <>
+                            <AntDesign name="checkcircleo" size={20} color="white" />
+                            <Text style={styles.botaoTexto}>Confirmar e Criar Evento</Text>
+                        </>
+                    )}
+                </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.botaoVoltar}
+                onPress={() => navigation.goBack()}
+            >
+                <Text style={styles.botaoTextoVoltar}>Voltar para editar</Text>
+            </TouchableOpacity>
+        </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flexGrow: 1,
-    padding: 24,
-    backgroundColor: "#F0F4F8", // Cor de fundo suave
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.background, 
+    paddingBottom: theme.spacing.xl * 2,
+  },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.xl,
+    gap: theme.spacing.sm,
   },
   titulo: {
     fontSize: 28,
     fontWeight: "800",
     textAlign: "center",
-    marginBottom: 30,
-    color: "#4B0082", // Um roxo escuro
+    color: theme.colors.textPrimary,
   },
   card: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 5,
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   cardTitulo: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#333",
-    marginLeft: 8,
+    color: theme.colors.textPrimary,
+    marginLeft: theme.spacing.sm,
+    flex: 1,
   },
   item: {
     flexDirection: "row",
-    marginBottom: 10,
-    alignItems: "center",
+    marginBottom: theme.spacing.sm,
+    alignItems: "flex-start",
+    paddingVertical: theme.spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.surface,
   },
   itemLabel: {
     fontWeight: "600",
-    width: 110,
-    color: "#555",
+    width: 140,
+    color: theme.colors.textSecondary,
     fontSize: 15,
   },
   itemValue: {
     flex: 1,
-    color: "#333",
+    color: theme.colors.textPrimary,
     fontSize: 15,
     lineHeight: 22,
   },
+  descriptionContainer: {
+    marginTop: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.surface,
+  },
+  descriptionLabel: {
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    fontSize: 15,
+    marginBottom: theme.spacing.xs,
+  },
   ingressoItem: {
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth, // Linha fina para separar
-    borderBottomColor: "#E0E0E0",
+    marginBottom: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.surface,
   },
   ingressoNome: {
     fontWeight: "bold",
-    color: "#1A1A1A",
+    color: theme.colors.textPrimary,
     fontSize: 16,
   },
   ingressoDetalhes: {
-    color: "#666",
+    color: theme.colors.textSecondary,
     fontSize: 14,
-    marginTop: 4,
-  },
-  ingressoDescricao: {
-    color: "#888",
-    fontSize: 12,
-    marginTop: 4,
-    fontStyle: "italic",
+    marginTop: theme.spacing.xs,
   },
   chatOption: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: theme.spacing.sm,
   },
   chatOptionText: {
     fontSize: 16,
-    color: "#333",
+    color: theme.colors.textPrimary,
     flex: 1,
-    marginRight: 10,
+    marginRight: theme.spacing.md,
     fontWeight: "500",
   },
   chatDescription: {
     fontSize: 13,
-    color: "#777",
+    color: theme.colors.textSecondary,
     fontStyle: "italic",
+    paddingTop: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.surface,
   },
+  emptyText: {
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: theme.spacing.md,
+  },
+  // --- BUTTONS ---
   botaoConfirmar: {
-    backgroundColor: "#4CAF50",
-    padding: 18,
-    borderRadius: 10,
+    borderRadius: theme.borderRadius.lg,
+    overflow: "hidden",
+    marginTop: theme.spacing.lg,
+    shadowColor: theme.colors.success,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  botaoConfirmarGradient: {
+    padding: theme.spacing.md,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 25,
-    shadowColor: "#4CAF50",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
+    gap: theme.spacing.sm,
+  },
+  botaoConfirmarDisabled: {
+    shadowOpacity: 0,
+    elevation: 0,
   },
   botaoTexto: {
-    color: "white",
+    color: theme.colors.white,
     fontWeight: "bold",
-    marginLeft: 10,
+    marginLeft: theme.spacing.sm,
     fontSize: 18,
   },
   botaoVoltar: {
-    padding: 15,
-    borderRadius: 10,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 15,
+    marginTop: theme.spacing.md,
   },
   botaoTextoVoltar: {
-    color: "#6A5ACD", // Roxo suave
+    color: theme.colors.textSecondary, 
     fontWeight: "600",
     fontSize: 16,
   },
@@ -388,23 +527,30 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F0F4F8",
+    backgroundColor: theme.colors.background,
   },
   loadingText: {
     marginTop: 10,
-    color: "#555",
+    color: theme.colors.textSecondary,
+    fontSize: 16,
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F0F4F8",
-    padding: 20,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.lg,
   },
   errorText: {
     fontSize: 18,
-    color: "#D9534F",
+    color: theme.colors.error,
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: theme.spacing.lg,
   },
+  editButton: {
+    paddingLeft: theme.spacing.md,
+  },
+  editButtonHeader: {
+      padding: theme.spacing.xs,
+  }
 });

@@ -69,52 +69,73 @@ export default function GruposScreen({ navigation }) {
     Montserrat_500Medium,
   });
 
-  const carregarGrupos = useCallback(async () => {
+// GruposScreen.js
+
+const carregarGrupos = useCallback(async () => {
     try {
-      setErro(null);
-      const token = await AsyncStorage.getItem("userToken");
-      if (!token) {
-        Alert.alert("Erro", "Você precisa estar logado");
-        navigation.navigate("Login");
-        return;
-      }
+        setErro(null);
+        const token = await AsyncStorage.getItem("userToken");
+        // [NOVO] Adicione a recuperação do tipo de usuário
+        const userType = await AsyncStorage.getItem("userType"); 
 
-      const response = await axios.get(`${API_URL}/grupos`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        timeout: 10000,
-      });
+        if (!token || !userType) {
+            Alert.alert("Erro", "Você precisa estar logado");
+            navigation.navigate("Login");
+            return;
+        }
 
-      if (response.data.success) {
-        setGrupos(response.data.grupos || []);
-      } else {
-        throw new Error(response.data.message || "Erro ao carregar grupos");
-      }
+        // [NOVO] Determinar a URL correta com base no tipo de usuário
+        let url;
+        if (userType === "organizador") {
+            url = `${API_URL}/grupos/organizador`;
+        } else if (userType === "convidado") {
+            url = `${API_URL}/grupos/convidado`;
+        } else {
+             throw new Error("Tipo de usuário desconhecido.");
+        }
+
+
+        // [MUDANÇA] Use a nova variável de URL
+        const response = await axios.get(url, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            timeout: 10000,
+        });
+
+        if (response.data.success) {
+            // A estrutura de resposta para ambas as rotas é { success: true, grupos: [...] }
+            setGrupos(response.data.grupos || []);
+        } else {
+            throw new Error(response.data.message || "Erro ao carregar grupos");
+        }
     } catch (error) {
-      console.error("Erro detalhado ao carregar grupos:", error);
-      setErro(error.message);
+        // ... (resto da lógica de tratamento de erro)
+        console.error("Erro detalhado ao carregar grupos:", error);
+        setErro(error.message);
 
-      let mensagemErro = "Não foi possível carregar os grupos";
-      if (error.response?.status === 401) {
-        mensagemErro = "Sessão expirada. Faça login novamente.";
-        AsyncStorage.clear();
-        navigation.navigate("Login");
-      } else if (error.response?.data?.message) {
-        mensagemErro = error.response.data.message;
-      } else if (error.code === "ECONNABORTED") {
-        mensagemErro = "Tempo limite excedido. Verifique sua conexão.";
-      } else if (error.message.includes("Network Error")) {
-        mensagemErro = "Erro de conexão. Verifique sua internet.";
-      }
-      Alert.alert("Erro", mensagemErro);
+        let mensagemErro = "Não foi possível carregar os grupos";
+        // ... (outros tratamentos de erro, 401, etc.)
+        if (error.response?.status === 401) {
+            mensagemErro = "Sessão expirada. Faça login novamente.";
+            await AsyncStorage.clear();
+            navigation.navigate("Login");
+        } else if (error.response?.data?.message) {
+            mensagemErro = error.response.data.message;
+        } else if (error.code === "ECONNABORTED") {
+            mensagemErro = "Tempo limite excedido. Verifique sua conexão.";
+        } else if (error.message.includes("Network Error")) {
+            mensagemErro = "Erro de conexão. Verifique sua internet.";
+        } else if (error.message.includes("Tipo de usuário desconhecido")) {
+            mensagemErro = error.message;
+        }
+        Alert.alert("Erro", mensagemErro);
     } finally {
-      setCarregando(false);
-      setRefreshing(false);
+        setCarregando(false);
+        setRefreshing(false);
     }
-  }, [navigation]);
-
+}, [navigation]); 
   useEffect(() => {
     if (fontsLoaded) {
       carregarGrupos();

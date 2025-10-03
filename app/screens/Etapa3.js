@@ -9,12 +9,47 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { API_URL } from "@env";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+// Definição do tema para consistência
+const theme = {
+  colors: {
+    primary: "#6366F1", // Indigo
+    primaryDark: "#4F46E5",
+    secondary: "#8B5CF6", // Violet/Fuchsia-ish
+    background: "#0F172A", // Dark Blue/Slate
+    backgroundSecondary: "#1E293B", // Slightly lighter Dark Blue/Slate
+    surface: "#334155", // Even lighter Slate
+    white: "#FFFFFF",
+    textPrimary: "#F1F5F9", // Off-white
+    textSecondary: "#94A3B8", // Light Slate/Gray
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 9999,
+  },
+};
 
 export default function Etapa3({ navigation }) {
   const [fotoCapa, setFotoCapa] = useState(null);
@@ -61,6 +96,7 @@ export default function Etapa3({ navigation }) {
     setFotos(fotos.filter((_, i) => i !== index));
   };
 
+  // Funções de upload sem alteração, conforme solicitado
   const uploadImagem = async (uri) => {
     const formData = new FormData();
     formData.append("arquivo", {
@@ -92,11 +128,15 @@ export default function Etapa3({ navigation }) {
     setLoading(true);
 
     try {
-      const uploadedFotos = [];
+        const uploadedFotos = [];
 
       const capaUrl = await uploadImagem(fotoCapa);
       if (capaUrl) {
         uploadedFotos.push({ url: capaUrl, tipo: "capa" });
+      } else {
+        setLoading(false);
+        Alert.alert("Erro Crítico", "Falha ao enviar a foto de capa.");
+        return;
       }
 
       for (const fotoUri of fotos) {
@@ -105,192 +145,237 @@ export default function Etapa3({ navigation }) {
           uploadedFotos.push({ url: fotoUrl, tipo: "galeria" });
         }
       }
+      
+        const dadosEventoString = await AsyncStorage.getItem("@evento");
 
-      const dadosEventoString = await AsyncStorage.getItem("@evento");
-      const dadosEvento = dadosEventoString
-        ? JSON.parse(dadosEventoString)
-        : {};
+        const dadosEvento = dadosEventoString
+            ? JSON.parse(dadosEventoString)
+            : {};
 
-      const dadosAtualizados = {
-        ...dadosEvento,
-        fotos: uploadedFotos,
-      };
-      await AsyncStorage.setItem("@evento", JSON.stringify(dadosAtualizados));
+        const dadosAtualizados = {
+            ...dadosEvento,
+            fotos: uploadedFotos, 
+        };
 
-      navigation.navigate("Etapa4");
+      
+        await AsyncStorage.setItem("@evento", JSON.stringify(dadosAtualizados));
+
+        navigation.navigate("Etapa4");
     } catch (error) {
-      console.error("Erro ao processar as fotos:", error);
-      Alert.alert("Erro", "Não foi possível salvar os dados");
+        console.error("Erro ao processar as fotos:", error);
+        Alert.alert("Erro", "Não foi possível salvar os dados");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1400b4" />
-        </TouchableOpacity>
-        
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '60%' }]} />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.colors.background}
+      />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
+          </TouchableOpacity>
+
+          {/* Progress Bar e Etapa */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: "60%" }]} />
+            </View>
+            <Text style={styles.progressText}>Etapa 3 de 5</Text>
           </View>
-          <Text style={styles.progressText}>Etapa 3 de 5</Text>
         </View>
-      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.titulo}>Adicione Fotos</Text>
-        <Text style={styles.subtitulo}>
-          Imagens atraentes ajudam a aumentar o interesse no seu evento
-        </Text>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="image" size={24} color="#1400b4" />
-            <Text style={styles.sectionTitle}>Foto de Capa</Text>
-          </View>
-          <Text style={styles.sectionDescription}>
-            Esta será a imagem principal do seu evento
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.titulo}>Adicione Mídias</Text>
+          <Text style={styles.subtitulo}>
+            Imagens atraentes ajudam a aumentar o interesse no seu evento
           </Text>
 
+          {/* Seção Foto de Capa */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Feather name="camera" size={24} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>Foto de Capa</Text>
+            </View>
+            <Text style={styles.sectionDescription}>
+              Esta será a imagem principal do seu evento
+            </Text>
+
+            <TouchableOpacity
+              style={styles.capaContainer}
+              onPress={() => escolherImagem(setFotoCapa)}
+              activeOpacity={0.8}
+            >
+              {fotoCapa ? (
+                <>
+                  <Image source={{ uri: fotoCapa }} style={styles.capaImagem} />
+                  <LinearGradient
+                    colors={["rgba(0,0,0,0.5)", theme.colors.primaryDark]}
+                    style={styles.capaOverlay}
+                  >
+                    <Ionicons name="camera" size={32} color={theme.colors.white} />
+                    <Text style={styles.capaOverlayText}>Alterar Foto</Text>
+                  </LinearGradient>
+                </>
+              ) : (
+                <View style={styles.placeholderContainer}>
+                  <View style={styles.placeholderIcon}>
+                    <Ionicons name="image-outline" size={48} color={theme.colors.primary} />
+                  </View>
+                  <Text style={styles.placeholderTitle}>
+                    Adicionar Foto de Capa
+                  </Text>
+                  <Text style={styles.placeholderSubtitle}>
+                    Toque para selecionar da galeria
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Seção Galeria de Fotos */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Feather name="image" size={24} color={theme.colors.primary} />
+              <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+                <Text style={styles.sectionTitle}>Galeria de Fotos</Text>
+                <View style={styles.limitBadgeContainer}>
+                    <Text style={styles.limitBadge}>{fotos.length}/10 fotos</Text>
+                </View>
+              </View>
+            </View>
+            <Text style={styles.sectionDescription}>
+              Adicione mais fotos para mostrar detalhes do evento
+            </Text>
+
+            <FlatList
+              data={[...fotos, "add"]}
+              horizontal
+              keyExtractor={(_, index) => index.toString()}
+              renderItem={({ item, index }) => {
+                if (item === "add") {
+                  return (
+                    <TouchableOpacity
+                      style={[
+                        styles.adicionarBotao,
+                        fotos.length >= 10 && styles.adicionarBotaoDisabled,
+                      ]}
+                      onPress={adicionarFotoGeral}
+                      disabled={fotos.length >= 10}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.addIcon}>
+                        <Ionicons
+                          name="add"
+                          size={32}
+                          color={
+                            fotos.length >= 10
+                              ? theme.colors.textSecondary
+                              : theme.colors.primary
+                          }
+                        />
+                      </View>
+                      <Text
+                        style={[
+                          styles.addText,
+                          fotos.length >= 10 && styles.addTextDisabled,
+                        ]}
+                      >
+                        Adicionar
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }
+
+                return (
+                  <View style={styles.fotoItemContainer}>
+                    <Image source={{ uri: item }} style={styles.fotoItem} />
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => removerFoto(index)}
+                    >
+                      <Ionicons name="close-circle" size={28} color={theme.colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                );
+              }}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.galleryContainer}
+            />
+          </View>
+
+          {/* Botão de Continuar */}
           <TouchableOpacity
-            style={styles.capaContainer}
-            onPress={() => escolherImagem(setFotoCapa)}
+            style={[styles.button, (!fotoCapa || loading) && styles.buttonDisabled]}
+            onPress={avancar}
+            disabled={!fotoCapa || loading}
             activeOpacity={0.8}
           >
-            {fotoCapa ? (
-              <>
-                <Image source={{ uri: fotoCapa }} style={styles.capaImagem} />
-                <View style={styles.capaOverlay}>
-                  <Ionicons name="camera" size={32} color="#ffffff" />
-                  <Text style={styles.capaOverlayText}>Alterar Foto</Text>
-                </View>
-              </>
-            ) : (
-              <View style={styles.placeholderContainer}>
-                <View style={styles.placeholderIcon}>
-                  <Ionicons name="image-outline" size={48} color="#1400b4" />
-                </View>
-                <Text style={styles.placeholderTitle}>Adicionar Foto de Capa</Text>
-                <Text style={styles.placeholderSubtitle}>
-                  Toque para selecionar da galeria
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="images" size={24} color="#1400b4" />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.sectionTitle}>Galeria de Fotos</Text>
-              <Text style={styles.limitBadge}>{fotos.length}/10 fotos</Text>
-            </View>
-          </View>
-          <Text style={styles.sectionDescription}>
-            Adicione mais fotos para mostrar detalhes do evento
-          </Text>
-
-          <FlatList
-            data={[...fotos, 'add']}
-            horizontal
-            keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item, index }) => {
-              if (item === 'add') {
-                return (
-                  <TouchableOpacity
-                    style={styles.adicionarBotao}
-                    onPress={adicionarFotoGeral}
-                    disabled={fotos.length >= 10}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.addIcon}>
-                      <Ionicons 
-                        name="add" 
-                        size={32} 
-                        color={fotos.length >= 10 ? "#a0a0b8" : "#1400b4"} 
-                      />
-                    </View>
-                    <Text style={[
-                      styles.addText,
-                      fotos.length >= 10 && styles.addTextDisabled
-                    ]}>
-                      Adicionar
-                    </Text>
-                  </TouchableOpacity>
-                );
+            <LinearGradient
+              colors={
+                (!fotoCapa || loading) ? [theme.colors.surface, theme.colors.surface] : [theme.colors.primary, theme.colors.secondary]
               }
-              
-              return (
-                <View style={styles.fotoItemContainer}>
-                  <Image source={{ uri: item }} style={styles.fotoItem} />
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removerFoto(index)}
-                  >
-                    <Ionicons name="close-circle" size={28} color="#ff4444" />
-                  </TouchableOpacity>
-                </View>
-              );
-            }}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.galleryContainer}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.button, (!fotoCapa || loading) && styles.buttonDisabled]}
-          onPress={avancar}
-          disabled={!fotoCapa || loading}
-          activeOpacity={0.8}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Text style={styles.buttonText}>Continuar</Text>
-              <Ionicons name="arrow-forward" size={20} color="#ffffff" />
-            </>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
+              style={styles.buttonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color={theme.colors.white} />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Continuar</Text>
+                  <Ionicons name="arrow-forward" size={20} color={theme.colors.white} />
+                </>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fd",
+    backgroundColor: theme.colors.background,
   },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: "#ffffff",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: "#1400b4",
+    paddingTop: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderBottomLeftRadius: theme.borderRadius.xl,
+    borderBottomRightRadius: theme.borderRadius.xl,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
   backButton: {
     width: 44,
     height: 44,
-    borderRadius: 12,
-    backgroundColor: "#f8f9fd",
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: theme.spacing.md,
   },
   progressContainer: {
     alignItems: "center",
@@ -298,76 +383,78 @@ const styles = StyleSheet.create({
   progressBar: {
     width: "100%",
     height: 6,
-    backgroundColor: "#e8e8f0",
+    backgroundColor: theme.colors.surface,
     borderRadius: 3,
     overflow: "hidden",
-    marginBottom: 8,
+    marginBottom: theme.spacing.xs,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#1400b4",
+    backgroundColor: theme.colors.primary,
     borderRadius: 3,
   },
   progressText: {
     fontSize: 13,
-    color: "#7575a3",
+    color: theme.colors.textSecondary,
     fontWeight: "600",
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl * 2,
   },
   titulo: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#1a1a2e",
-    marginBottom: 8,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs,
   },
   subtitulo: {
     fontSize: 15,
-    color: "#7575a3",
-    marginBottom: 32,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xl,
     lineHeight: 22,
   },
   section: {
-    marginBottom: 36,
+    marginBottom: theme.spacing.lg * 1.5,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: theme.spacing.xs,
     gap: 10,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1a1a2e",
+    color: theme.colors.textPrimary,
+  },
+  limitBadgeContainer: {
+    marginLeft: theme.spacing.md
   },
   limitBadge: {
     fontSize: 13,
-    color: "#1400b4",
+    color: theme.colors.primary,
     fontWeight: "600",
-    marginTop: 2,
   },
   sectionDescription: {
     fontSize: 14,
-    color: "#7575a3",
-    marginBottom: 16,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
     lineHeight: 20,
   },
   capaContainer: {
     height: 220,
-    borderRadius: 20,
-    backgroundColor: "#ffffff",
+    borderRadius: theme.borderRadius.xl,
+    backgroundColor: theme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "#e8e8f0",
-    shadowColor: "#1400b4",
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
+    shadowColor: theme.colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 3,
   },
   capaImagem: {
@@ -379,42 +466,42 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
     height: "100%",
-    backgroundColor: "rgba(20, 0, 180, 0.7)",
+    backgroundColor: "rgba(79, 70, 229, 0.7)", // primaryDark com opacidade
     alignItems: "center",
     justifyContent: "center",
   },
   capaOverlayText: {
-    color: "#ffffff",
-    marginTop: 8,
+    color: theme.colors.white,
+    marginTop: theme.spacing.sm,
     fontSize: 16,
     fontWeight: "600",
   },
   placeholderContainer: {
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
+    padding: theme.spacing.lg,
   },
   placeholderIcon: {
     width: 80,
     height: 80,
-    borderRadius: 20,
-    backgroundColor: "#f0edff",
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: theme.spacing.md,
   },
   placeholderTitle: {
-    color: "#1a1a2e",
+    color: theme.colors.textPrimary,
     fontSize: 17,
     fontWeight: "700",
-    marginBottom: 4,
+    marginBottom: theme.spacing.xs,
   },
   placeholderSubtitle: {
-    color: "#7575a3",
+    color: theme.colors.textSecondary,
     fontSize: 14,
   },
   galleryContainer: {
-    gap: 12,
+    gap: theme.spacing.md,
   },
   fotoItemContainer: {
     position: "relative",
@@ -422,73 +509,81 @@ const styles = StyleSheet.create({
   fotoItem: {
     width: 140,
     height: 140,
-    borderRadius: 16,
-    backgroundColor: "#f0f0f5",
-    borderWidth: 2,
-    borderColor: "#e8e8f0",
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
   },
   removeButton: {
     position: "absolute",
-    top: -10,
-    right: -10,
-    backgroundColor: "white",
-    borderRadius: 14,
+    top: -theme.spacing.sm,
+    right: -theme.spacing.sm,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.full,
+    padding: theme.spacing.xs / 2,
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
   },
   adicionarBotao: {
     width: 140,
     height: 140,
-    borderRadius: 16,
+    borderRadius: theme.borderRadius.lg,
     borderWidth: 2,
-    borderColor: "#1400b4",
+    borderColor: theme.colors.primary,
     borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f9fd",
+    backgroundColor: theme.colors.backgroundSecondary,
+  },
+  adicionarBotaoDisabled: {
+    borderColor: theme.colors.surface,
   },
   addIcon: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: "#f0edff",
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom: theme.spacing.sm,
   },
   addText: {
-    color: "#1400b4",
+    color: theme.colors.primary,
     fontSize: 14,
     fontWeight: "600",
   },
   addTextDisabled: {
-    color: "#a0a0b8",
+    color: theme.colors.textSecondary,
   },
   button: {
+    borderRadius: theme.borderRadius.xl,
+    marginTop: theme.spacing.lg,
+    overflow: "hidden",
+    shadowColor: theme.colors.primaryDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  buttonGradient: {
     flexDirection: "row",
-    backgroundColor: "#1400b4",
-    padding: 20,
-    borderRadius: 18,
+    padding: theme.spacing.md,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 20,
-    gap: 10,
-    shadowColor: "#1400b4",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    gap: theme.spacing.sm,
   },
   buttonDisabled: {
-    backgroundColor: "#c0c0d0",
+    backgroundColor: theme.colors.surface,
     shadowOpacity: 0,
     elevation: 0,
   },
   buttonText: {
-    color: "white",
+    color: theme.colors.white,
     fontSize: 18,
     fontWeight: "700",
   },

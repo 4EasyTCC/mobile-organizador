@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,44 @@ import {
   ScrollView,
   Alert,
   Animated,
+  StatusBar,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons, Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+// Definição do tema para consistência
+const theme = {
+  colors: {
+    primary: "#6366F1", // Indigo
+    primaryDark: "#4F46E5",
+    secondary: "#8B5CF6", // Violet/Fuchsia-ish
+    background: "#0F172A", // Dark Blue/Slate
+    backgroundSecondary: "#1E293B", // Slightly lighter Dark Blue/Slate
+    surface: "#334155", // Even lighter Slate
+    white: "#FFFFFF",
+    textPrimary: "#F1F5F9", // Off-white
+    textSecondary: "#94A3B8", // Light Slate/Gray
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 9999,
+  },
+};
 
 export default function Etapa4({ navigation }) {
   const [ingressos, setIngressos] = useState([]);
@@ -21,30 +55,61 @@ export default function Etapa4({ navigation }) {
     descricao: "",
     preco: "",
     quantidade: "",
-    dataLimite: new Date(),
+    // dataLimite: new Date(), // Desabilitado para simplificar o input nesta refatoração
   });
   const [fadeAnim] = useState(new Animated.Value(0));
 
-  React.useEffect(() => {
+  useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
       useNativeDriver: true,
     }).start();
-  }, []);
+    
+    // Carregar ingressos salvos se o usuário voltar
+    carregarIngressosSalvos();
+  }, [fadeAnim]);
+
+  const carregarIngressosSalvos = async () => {
+    try {
+        const dadosEventoString = await AsyncStorage.getItem("@evento");
+        if (dadosEventoString) {
+            const dadosEvento = JSON.parse(dadosEventoString);
+            if (dadosEvento.ingressos) {
+                setIngressos(dadosEvento.ingressos);
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao carregar ingressos salvos:", error);
+    }
+  }
 
   const adicionarIngresso = () => {
     if (!novoIngresso.nome || !novoIngresso.preco || !novoIngresso.quantidade) {
-      Alert.alert("Atenção", "Preencha os campos obrigatórios");
+      Alert.alert("Atenção", "Preencha os campos obrigatórios (Nome, Preço e Quantidade).");
       return;
     }
 
-    setIngressos([
-      ...ingressos,
+    const preco = parseFloat(novoIngresso.preco.replace(",", "."));
+    const quantidade = parseInt(novoIngresso.quantidade);
+
+    if (isNaN(preco) || preco < 0) {
+        Alert.alert("Atenção", "Preço inválido.");
+        return;
+    }
+    if (isNaN(quantidade) || quantidade <= 0) {
+        Alert.alert("Atenção", "Quantidade deve ser um número inteiro positivo.");
+        return;
+    }
+
+
+    setIngressos((prevIngressos) => [
+      ...prevIngressos,
       {
         ...novoIngresso,
-        preco: parseFloat(novoIngresso.preco),
-        quantidade: parseInt(novoIngresso.quantidade),
+        preco: preco,
+        quantidade: quantidade,
+        dataLimiteVenda: null, // Placeholder
       },
     ]);
 
@@ -53,7 +118,7 @@ export default function Etapa4({ navigation }) {
       descricao: "",
       preco: "",
       quantidade: "",
-      dataLimite: new Date(),
+      // dataLimite: new Date(),
     });
   };
 
@@ -64,6 +129,11 @@ export default function Etapa4({ navigation }) {
   };
 
   const avancar = async () => {
+    if (ingressos.length === 0) {
+        Alert.alert("Atenção", "Adicione pelo menos um tipo de ingresso para continuar.");
+        return;
+    }
+    
     const dadosEventoString = await AsyncStorage.getItem("@evento");
     const dadosEvento = dadosEventoString ? JSON.parse(dadosEventoString) : {};
 
@@ -72,44 +142,98 @@ export default function Etapa4({ navigation }) {
       ingressos: ingressos,
     };
 
-    await AsyncStorage.setItem("@evento", JSON.stringify(dadosAtualizados));
-    navigation.navigate("Etapa5");
-
-    const dadosSalvos = await AsyncStorage.getItem("@evento");
-    console.log("Dados salvos no AsyncStorage:", JSON.parse(dadosSalvos));
+    try {
+        await AsyncStorage.setItem("@evento", JSON.stringify(dadosAtualizados));
+        navigation.navigate("Etapa5");
+    } catch (error) {
+        console.error("Erro ao salvar ingressos:", error);
+        Alert.alert("Erro", "Não foi possível salvar os dados dos ingressos.");
+    }
   };
 
-  return (
-    <View style={styles.wrapper}>
-      <LinearGradient
-        colors={["#667eea", "#764ba2", "#f093fb"]}
-        style={styles.gradientBackground}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      
-      <ScrollView contentContainerStyle={styles.container}>
-        <Animated.View style={{ opacity: fadeAnim }}>
-          <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <MaterialIcons name="confirmation-number" size={40} color="#fff" />
+  const renderIngressoCard = ({ item, index }) => (
+    <View style={styles.ingressoCard}>
+      <View style={styles.ingressoLeft}>
+        <View style={styles.ingressoIconContainer}>
+          <MaterialIcons
+            name="confirmation-number"
+            size={24}
+            color={theme.colors.primary}
+          />
+        </View>
+        <View style={styles.ingressoInfo}>
+          <Text style={styles.ingressoNome}>{item.nome}</Text>
+          {item.descricao ? (
+            <Text style={styles.ingressoDescricao} numberOfLines={1}>
+              {item.descricao}
+            </Text>
+          ) : (
+             <Text style={styles.ingressoDescricao}>Sem descrição</Text>
+          )}
+
+          <View style={styles.ingressoFooter}>
+            <View style={styles.priceTag}>
+              <Text style={styles.ingressoPreco}>
+                R$ {item.preco?.toFixed(2).replace(".", ",")}
+              </Text>
             </View>
+            <View style={styles.quantityTag}>
+              <Feather name="users" size={14} color={theme.colors.textSecondary} />
+              <Text style={styles.ingressoQuantidade}>
+                {item.quantidade}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+      <TouchableOpacity
+        onPress={() => removerIngresso(index)}
+        style={styles.deleteButton}
+      >
+        <Feather name="trash-2" size={20} color={theme.colors.error} />
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.colors.background}
+      />
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
+        </TouchableOpacity>
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: "80%" }]} />
+          </View>
+          <Text style={styles.progressText}>Etapa 4 de 5</Text>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Animated.View style={{ opacity: fadeAnim }}>
             <Text style={styles.titulo}>Ingressos do Evento</Text>
             <Text style={styles.subtituloHeader}>
-              Configure os tipos de ingressos disponíveis
+              Configure os tipos de ingressos e suas quantidades.
             </Text>
-          </View>
 
+          {/* NOVO INGRESSO FORM */}
           <View style={styles.novoIngressoContainer}>
             <View style={styles.cardHeader}>
-              <MaterialIcons name="add-circle" size={24} color="#667eea" />
+              <Feather name="plus-circle" size={24} color={theme.colors.primary} />
               <Text style={styles.cardTitulo}>Novo Ingresso</Text>
             </View>
 
             <TextInput
               style={styles.input}
               placeholder="Nome do ingresso*"
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.colors.textSecondary}
               value={novoIngresso.nome}
               onChangeText={(text) =>
                 setNovoIngresso({ ...novoIngresso, nome: text })
@@ -119,7 +243,7 @@ export default function Etapa4({ navigation }) {
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Descrição (opcional)"
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.colors.textSecondary}
               multiline
               numberOfLines={3}
               value={novoIngresso.descricao}
@@ -129,35 +253,37 @@ export default function Etapa4({ navigation }) {
             />
 
             <View style={styles.row}>
+              {/* Preço */}
               <View style={styles.inputWrapper}>
-                <Text style={styles.inputLabel}>Preço*</Text>
-                <View style={styles.inputWithIcon}>
+                <Text style={styles.inputLabel}>Preço (R$)*</Text>
+                <View style={styles.inputGroup}>
                   <Text style={styles.currencySymbol}>R$</Text>
                   <TextInput
                     style={styles.inputSmall}
                     placeholder="0,00"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={theme.colors.textSecondary}
                     keyboardType="numeric"
                     value={novoIngresso.preco}
                     onChangeText={(text) =>
-                      setNovoIngresso({ ...novoIngresso, preco: text })
+                      setNovoIngresso({ ...novoIngresso, preco: text.replace(",", ".") })
                     }
                   />
                 </View>
               </View>
 
+              {/* Quantidade */}
               <View style={styles.inputWrapper}>
                 <Text style={styles.inputLabel}>Quantidade*</Text>
-                <View style={styles.inputWithIcon}>
-                  <MaterialIcons name="people" size={18} color="#999" />
+                <View style={styles.inputGroup}>
+                  <Feather name="hash" size={18} color={theme.colors.textSecondary} />
                   <TextInput
                     style={styles.inputSmall}
                     placeholder="100"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={theme.colors.textSecondary}
                     keyboardType="numeric"
                     value={novoIngresso.quantidade}
                     onChangeText={(text) =>
-                      setNovoIngresso({ ...novoIngresso, quantidade: text })
+                      setNovoIngresso({ ...novoIngresso, quantidade: text.replace(/[^0-9]/g, '') })
                     }
                   />
                 </View>
@@ -170,21 +296,22 @@ export default function Etapa4({ navigation }) {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={["#667eea", "#764ba2"]}
+                colors={[theme.colors.primary, theme.colors.secondary]}
                 style={styles.gradientButton}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <MaterialIcons name="add" size={24} color="white" />
+                <Feather name="check-circle" size={20} color="white" />
                 <Text style={styles.botaoAdicionarTexto}>Adicionar Ingresso</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
 
+          {/* LISTA DE INGRESSOS */}
           {ingressos.length > 0 && (
             <View style={styles.listaContainer}>
               <View style={styles.listaHeader}>
-                <MaterialIcons name="receipt" size={24} color="#667eea" />
+                <Feather name="check-square" size={24} color={theme.colors.primary} />
                 <Text style={styles.listaTitulo}>
                   Ingressos Configurados
                 </Text>
@@ -197,52 +324,14 @@ export default function Etapa4({ navigation }) {
                 data={ingressos}
                 scrollEnabled={false}
                 keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item, index }) => (
-                  <View style={styles.ingressoCard}>
-                    <View style={styles.ingressoLeft}>
-                      <View style={styles.ingressoIconContainer}>
-                        <MaterialIcons
-                          name="confirmation-number"
-                          size={28}
-                          color="#667eea"
-                        />
-                      </View>
-                      <View style={styles.ingressoInfo}>
-                        <Text style={styles.ingressoNome}>{item.nome}</Text>
-                        {item.descricao && (
-                          <Text style={styles.ingressoDescricao}>
-                            {item.descricao}
-                          </Text>
-                        )}
-                        <View style={styles.ingressoFooter}>
-                          <View style={styles.priceTag}>
-                            <Text style={styles.ingressoPreco}>
-                              R$ {item.preco.toFixed(2)}
-                            </Text>
-                          </View>
-                          <View style={styles.quantityTag}>
-                            <MaterialIcons name="people" size={14} color="#666" />
-                            <Text style={styles.ingressoQuantidade}>
-                              {item.quantidade}
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => removerIngresso(index)}
-                      style={styles.deleteButton}
-                    >
-                      <MaterialIcons name="delete-outline" size={24} color="#ff4757" />
-                    </TouchableOpacity>
-                  </View>
-                )}
+                renderItem={renderIngressoCard}
               />
             </View>
           )}
 
+          {/* BOTÃO DE AVANÇAR */}
           <TouchableOpacity
-            style={[styles.botaoAvancar]}
+            style={styles.botaoAvancar}
             onPress={avancar}
             disabled={ingressos.length === 0}
             activeOpacity={0.8}
@@ -250,10 +339,10 @@ export default function Etapa4({ navigation }) {
             <LinearGradient
               colors={
                 ingressos.length === 0
-                  ? ["#e0e0e0", "#e0e0e0"]
-                  : ["#4facfe", "#00f2fe"]
+                  ? [theme.colors.surface, theme.colors.surface]
+                  : [theme.colors.primary, theme.colors.secondary]
               }
-              style={styles.gradientButton}
+              style={styles.gradientButtonAvancar}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
@@ -263,259 +352,307 @@ export default function Etapa4({ navigation }) {
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "#f8f9fd",
-  },
-  gradientBackground: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 250,
-    opacity: 0.1,
-  },
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    paddingTop: 40,
+    backgroundColor: theme.colors.background,
   },
   header: {
-    alignItems: "center",
-    marginBottom: 30,
+    paddingTop: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderBottomLeftRadius: theme.borderRadius.xl,
+    borderBottomRightRadius: theme.borderRadius.xl,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(102, 126, 234, 0.15)",
-    justifyContent: "center",
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
-    marginBottom: 15,
+    justifyContent: "center",
+    marginBottom: theme.spacing.md,
+  },
+  progressContainer: {
+    alignItems: "center",
+  },
+  progressBar: {
+    width: "100%",
+    height: 6,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 3,
+    overflow: "hidden",
+    marginBottom: theme.spacing.xs,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: theme.colors.primary,
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    fontWeight: "600",
+  },
+
+  // --- CONTENT STYLE ---
+  scrollContent: {
+    flexGrow: 1,
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl * 2,
+    backgroundColor: theme.colors.background,
   },
   titulo: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: "800",
-    color: "#2d3436",
-    marginBottom: 8,
-    textAlign: "center",
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs,
+    textAlign: "left",
   },
   subtituloHeader: {
-    fontSize: 16,
-    color: "#636e72",
-    textAlign: "center",
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.lg,
+    textAlign: "left",
   },
   novoIngressoContainer: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 25,
-    shadowColor: "#667eea",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    shadowColor: theme.colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
     elevation: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
   },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: theme.spacing.md,
   },
   cardTitulo: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    color: "#2d3436",
-    marginLeft: 10,
+    color: theme.colors.textPrimary,
+    marginLeft: theme.spacing.sm,
   },
   input: {
-    backgroundColor: "#f8f9fd",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
-    borderWidth: 2,
-    borderColor: "#e9ecef",
-    fontSize: 16,
-    color: "#2d3436",
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.md,
+    fontSize: 15, 
+    color: theme.colors.textPrimary,
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
   },
   textArea: {
-    height: 80,
+    height: 50, // Menor
     textAlignVertical: "top",
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 15,
+    marginBottom: theme.spacing.md,
   },
   inputWrapper: {
     width: "48%",
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: 13, // Ligeiramente menor
     fontWeight: "600",
-    color: "#636e72",
-    marginBottom: 8,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
   },
-  inputWithIcon: {
+  inputGroup: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f9fd",
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#e9ecef",
-    paddingLeft: 12,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.sm,
   },
   currencySymbol: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#636e72",
-    marginRight: 5,
+    color: theme.colors.textSecondary,
+    marginRight: theme.spacing.xs,
   },
   inputSmall: {
     flex: 1,
-    padding: 15,
-    fontSize: 16,
-    color: "#2d3436",
+    paddingVertical: theme.spacing.sm, // Padding vertical menor
+    paddingHorizontal: theme.spacing.xs,
+    fontSize: 15,
+    color: theme.colors.textPrimary,
+    height: 48, // Altura fixa menor
   },
   botaoAdicionar: {
-    borderRadius: 12,
+    borderRadius: theme.borderRadius.lg,
     overflow: "hidden",
-    marginTop: 10,
+    marginTop: theme.spacing.sm,
+    elevation: 4,
   },
   gradientButton: {
     flexDirection: "row",
-    padding: 16,
+    padding: theme.spacing.md,
     alignItems: "center",
     justifyContent: "center",
+    gap: theme.spacing.sm,
   },
   botaoAdicionarTexto: {
-    color: "white",
+    color: theme.colors.white,
     fontWeight: "700",
-    fontSize: 16,
-    marginLeft: 8,
+    fontSize: 15, // Ligeiramente menor
   },
+  // --- LISTA DE INGRESSOS ---
   listaContainer: {
-    marginBottom: 20,
+    marginBottom: theme.spacing.xl,
   },
   listaHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
-    paddingHorizontal: 5,
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xs,
   },
   listaTitulo: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    color: "#2d3436",
-    marginLeft: 10,
+    color: theme.colors.textPrimary,
+    marginLeft: theme.spacing.sm,
     flex: 1,
   },
   badge: {
-    backgroundColor: "#667eea",
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    backgroundColor: theme.colors.primary,
+    width: 30,
+    height: 30,
+    borderRadius: theme.borderRadius.full,
     justifyContent: "center",
     alignItems: "center",
   },
   badgeText: {
-    color: "white",
+    color: theme.colors.white,
     fontWeight: "700",
-    fontSize: 14,
+    fontSize: 13,
   },
   ingressoCard: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.secondary,
   },
   ingressoLeft: {
     flexDirection: "row",
     flex: 1,
   },
   ingressoIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: "rgba(102, 126, 234, 0.1)",
+    width: 44,
+    height: 44,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: theme.spacing.md,
   },
   ingressoInfo: {
     flex: 1,
   },
   ingressoNome: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
-    color: "#2d3436",
-    marginBottom: 4,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs / 2,
   },
   ingressoDescricao: {
-    color: "#636e72",
-    fontSize: 14,
-    marginBottom: 8,
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    marginBottom: theme.spacing.sm,
   },
   ingressoFooter: {
     flexDirection: "row",
     alignItems: "center",
+    marginTop: theme.spacing.xs,
   },
   priceTag: {
-    backgroundColor: "rgba(102, 126, 234, 0.1)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginRight: 10,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    marginRight: theme.spacing.sm,
   },
   ingressoPreco: {
     fontWeight: "700",
-    color: "#667eea",
-    fontSize: 16,
+    color: theme.colors.primary,
+    fontSize: 15,
   },
   quantityTag: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f9fd",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
   },
   ingressoQuantidade: {
-    color: "#636e72",
+    color: theme.colors.textSecondary,
     fontWeight: "600",
-    marginLeft: 4,
+    marginLeft: theme.spacing.xs,
     fontSize: 14,
   },
   deleteButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255, 71, 87, 0.1)",
+    width: 36,
+    height: 36,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 10,
+    marginLeft: theme.spacing.md,
   },
+  // --- AVANÇAR BUTTON ---
   botaoAvancar: {
-    borderRadius: 12,
+    borderRadius: theme.borderRadius.xl,
     overflow: "hidden",
-    marginTop: 10,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.xl,
+    elevation: 10,
+    shadowColor: theme.colors.primaryDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+  },
+  gradientButtonAvancar: {
+    flexDirection: "row",
+    padding: theme.spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
   },
   botaoAvancarTexto: {
-    color: "white",
+    color: theme.colors.white,
     fontWeight: "700",
     fontSize: 18,
-    marginRight: 8,
   },
 });

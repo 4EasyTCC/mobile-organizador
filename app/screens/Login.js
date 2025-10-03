@@ -61,15 +61,14 @@ export default function Login() {
 
     try {
       const resposta = await axios.post(endpoint, dados);
-
-      if (modo === "login") {
-        await AsyncStorage.setItem("userToken", resposta.data.token);
-        await AsyncStorage.setItem(
-          "userData",
-          JSON.stringify(resposta.data.organizador)
-        );
-      }
-
+  if (modo === "login") {
+    await AsyncStorage.setItem("userToken", resposta.data.token);
+    await AsyncStorage.setItem("userType", "organizador"); 
+    await AsyncStorage.setItem(
+      "userData",
+      JSON.stringify(resposta.data.organizador)
+    );
+  }
       Alert.alert(
         "Sucesso",
         modo === "login"

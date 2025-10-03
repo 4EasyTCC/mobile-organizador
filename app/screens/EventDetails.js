@@ -10,10 +10,45 @@ import {
   Alert,
   FlatList,
   Image,
+  StatusBar,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "@env";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+// Definição do tema (copiado do arquivo de GruposScreen/HomeScreen)
+const theme = {
+  colors: {
+    primary: "#6366F1", // Indigo
+    primaryDark: "#4F46E5",
+    secondary: "#8B5CF6", // Violet/Fuchsia-ish
+    background: "#0F172A", // Dark Blue/Slate
+    backgroundSecondary: "#1E293B", // Slightly lighter Dark Blue/Slate
+    surface: "#334155", // Even lighter Slate
+    white: "#FFFFFF",
+    textPrimary: "#F1F5F9", // Off-white
+    textSecondary: "#94A3B8", // Light Slate/Gray
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 9999,
+  },
+};
 
 export default function EventDetails({ route, navigation }) {
   const { evento } = route.params;
@@ -29,7 +64,9 @@ export default function EventDetails({ route, navigation }) {
     try {
       const token = await AsyncStorage.getItem("userToken");
       if (!token) {
-        throw new Error("Token não encontrado.");
+        // Redireciona para o login se não houver token
+        navigation.navigate("Login");
+        return;
       }
 
       const idDoEvento = evento.id;
@@ -46,7 +83,10 @@ export default function EventDetails({ route, navigation }) {
       setEventoDetalhes(data.evento);
     } catch (err) {
       console.error("Erro ao carregar evento:", err);
-      Alert.alert("Erro", "Não foi possível carregar os detalhes do evento");
+      Alert.alert(
+        "Erro",
+        "Não foi possível carregar os detalhes do evento. Tente novamente."
+      );
     } finally {
       setLoading(false);
     }
@@ -57,45 +97,70 @@ export default function EventDetails({ route, navigation }) {
       "Editar Ingresso",
       `Você clicou para editar o ingresso ${ingresso.nome}`
     );
-    // Implemente a navegação ou modal para a tela de edição
+    // TODO: Implementar navegação ou modal para a tela de edição de ingresso
   };
 
+  // Funções de formatação (ajustadas para o contexto)
+  const formatarData = (dataString) => {
+    if (!dataString) return "Data não informada";
+    try {
+      return new Date(dataString).toLocaleDateString("pt-BR");
+    } catch (error) {
+      return "Data inválida";
+    }
+  };
+
+  const formatarHora = (dataString) => {
+    if (!dataString) return "--:--";
+    try {
+      return new Date(dataString).toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      return "--:--";
+    }
+  };
+
+  const renderInfoRow = (iconName, text) => (
+    <View style={styles.infoRow}>
+      <Ionicons name={iconName} size={20} color={theme.colors.primary} />
+      <Text style={styles.infoText}>{text}</Text>
+    </View>
+  );
+
   const renderTabContent = () => {
+    if (!eventoDetalhes) return null;
+
     switch (selectedTab) {
       case "Informações":
+        const enderecoCompleto = eventoDetalhes.localizacao?.endereco
+          ? `${eventoDetalhes.localizacao.endereco}, ${
+              eventoDetalhes.localizacao.cidade || ""
+            } - ${eventoDetalhes.localizacao.estado || ""}`.trim()
+          : "Endereço não informado";
+
         return (
           <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Icon name="location-outline" size={20} color="#FF3A5C" />
-              <Text style={styles.infoText}>
-                {eventoDetalhes.localizacao?.endereco ||
-                  "Endereço não informado"}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Icon name="calendar-outline" size={20} color="#FF3A5C" />
-              <Text style={styles.infoText}>
-                {new Date(eventoDetalhes.dataInicio).toLocaleDateString(
-                  "pt-BR"
-                )}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Icon name="time-outline" size={20} color="#FF3A5C" />
-              <Text style={styles.infoText}>
-                {new Date(eventoDetalhes.dataInicio).toLocaleTimeString(
-                  "pt-BR",
-                  { hour: "2-digit", minute: "2-digit" }
-                )}
-                {" - "}
-                {new Date(eventoDetalhes.dataFim).toLocaleTimeString("pt-BR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </Text>
-            </View>
+            {renderInfoRow("location-outline", enderecoCompleto)}
+            {renderInfoRow(
+              "calendar-outline",
+              `Data: ${formatarData(eventoDetalhes.dataInicio)}`
+            )}
+            {renderInfoRow(
+              "time-outline",
+              `Horário: ${formatarHora(eventoDetalhes.dataInicio)} - ${formatarHora(
+                eventoDetalhes.dataFim
+              )}`
+            )}
+            <View style={styles.divider} />
+            <Text style={styles.organizadorTitle}>Organizador</Text>
+            <Text style={styles.organizadorText}>
+              {eventoDetalhes.organizador?.nome || "Organizador desconhecido"}
+            </Text>
           </View>
         );
+
       case "Galeria":
         const fotosGaleria = eventoDetalhes.Midia?.filter(
           (m) => m.tipo === "galeria"
@@ -124,6 +189,7 @@ export default function EventDetails({ route, navigation }) {
             )}
           </View>
         );
+
       case "Ingressos":
         return (
           <View style={styles.ingressoCardsContainer}>
@@ -132,21 +198,24 @@ export default function EventDetails({ route, navigation }) {
                 <View key={ing.ingressoId} style={styles.ingressoCard}>
                   <View style={styles.ingressoHeader}>
                     <Text style={styles.ingressoTitulo}>{ing.nome}</Text>
-                    <TouchableOpacity onPress={() => handleEditIngresso(ing)}>
-                      <Icon name="pencil-outline" size={24} color="#fff" />
+                    <TouchableOpacity
+                      onPress={() => handleEditIngresso(ing)}
+                      style={styles.editButton}
+                    >
+                      <Feather name="edit-3" size={20} color={theme.colors.white} />
                     </TouchableOpacity>
                   </View>
                   <View style={styles.ingressoDetails}>
                     <View style={styles.ingressoDetailItem}>
                       <Text style={styles.ingressoDetailTitle}>Preço</Text>
                       <Text style={styles.ingressoDetailText}>
-                        R$ {ing.preco.toFixed(2).replace(".", ",")}
+                        R$ {ing.preco?.toFixed(2).replace(".", ",") || "0,00"}
                       </Text>
                     </View>
                     <View style={styles.ingressoDetailItem}>
                       <Text style={styles.ingressoDetailTitle}>Quantidade</Text>
                       <Text style={styles.ingressoDetailText}>
-                        {ing.quantidade}
+                        {ing.quantidade || 0}
                       </Text>
                     </View>
                     <View style={styles.ingressoDetailItem}>
@@ -155,9 +224,7 @@ export default function EventDetails({ route, navigation }) {
                       </Text>
                       <Text style={styles.ingressoDetailText}>
                         {ing.dataLimiteVenda
-                          ? new Date(ing.dataLimiteVenda).toLocaleDateString(
-                              "pt-BR"
-                            )
+                          ? formatarData(ing.dataLimiteVenda)
                           : "Não definida"}
                       </Text>
                     </View>
@@ -169,6 +236,11 @@ export default function EventDetails({ route, navigation }) {
                 <Text style={styles.emptyStateText}>
                   Nenhum ingresso disponível.
                 </Text>
+                <TouchableOpacity style={styles.botaoCriarIngresso}>
+                  <Text style={styles.botaoCriarIngressoTexto}>
+                    Adicionar Ingresso
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -178,12 +250,15 @@ export default function EventDetails({ route, navigation }) {
     }
   };
 
-  if (loading || !eventoDetalhes) {
+  if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF3A5C" />
+      <LinearGradient
+        colors={[theme.colors.background, theme.colors.backgroundSecondary]}
+        style={styles.loadingContainer}
+      >
+        <ActivityIndicator size="large" color={theme.colors.primary} />
         <Text style={styles.loadingText}>Carregando evento...</Text>
-      </View>
+      </LinearGradient>
     );
   }
 
@@ -192,69 +267,86 @@ export default function EventDetails({ route, navigation }) {
   );
   const capaSource = imagemCapa
     ? { uri: `${API_URL}${imagemCapa.url}` }
-    : require("../imagens/roxa.png");
+    : require("../imagens/roxa.png"); // Use a mesma imagem de fallback
 
   return (
-    <ScrollView style={styles.container}>
-      <ImageBackground source={capaSource} style={styles.headerImage}>
-        <View style={styles.overlay}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => navigation.goBack()}
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.colors.background}
+      />
+      <ScrollView style={styles.container}>
+        <ImageBackground source={capaSource} style={styles.headerImage}>
+          <LinearGradient
+            colors={["transparent", theme.colors.background]}
+            style={styles.overlay}
           >
-            <Icon name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.title}>{eventoDetalhes.nomeEvento}</Text>
-          <Text style={styles.city}>
-            {eventoDetalhes.localizacao?.cidade || "Cidade"},{" "}
-            {eventoDetalhes.localizacao?.estado || ""}
-          </Text>
-        </View>
-      </ImageBackground>
-
-      <View style={styles.contentContainer}>
-        <View style={styles.tabs}>
-          {["Informações", "Galeria", "Ingressos"].map((tab) => (
             <TouchableOpacity
-              key={tab}
-              style={[styles.tab, selectedTab === tab && styles.tabActive]}
-              onPress={() => setSelectedTab(tab)}
+              style={styles.backBtn}
+              onPress={() => navigation.goBack()}
             >
-              <Text
-                style={
-                  selectedTab === tab ? styles.tabActiveText : styles.tabText
-                }
-              >
-                {tab}
-              </Text>
+              <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
             </TouchableOpacity>
-          ))}
-        </View>
+            <Text style={styles.title}>{eventoDetalhes.nomeEvento}</Text>
+            <Text style={styles.city}>
+              {eventoDetalhes.localizacao?.cidade || "Cidade"},{" "}
+              {eventoDetalhes.localizacao?.estado || "Estado"}
+            </Text>
+          </LinearGradient>
+        </ImageBackground>
 
-        {renderTabContent()}
+        <View style={styles.contentContainer}>
+          {/* Tabs */}
+          <View style={styles.tabs}>
+            {["Informações", "Galeria", "Ingressos"].map((tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  styles.tab,
+                  selectedTab === tab && styles.tabActive,
+                ]}
+                onPress={() => setSelectedTab(tab)}
+              >
+                <Text
+                  style={
+                    selectedTab === tab
+                      ? styles.tabActiveText
+                      : styles.tabText
+                  }
+                >
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-        <View style={styles.descriptionCard}>
-          <Text style={styles.descTitle}>Descrição</Text>
-          <Text style={styles.desc}>{eventoDetalhes.descEvento}</Text>
+          {renderTabContent()}
+
+          <View style={styles.descriptionCard}>
+            <Text style={styles.descTitle}>Descrição do Evento</Text>
+            <Text style={styles.desc}>
+              {eventoDetalhes.descEvento || "Nenhuma descrição fornecida."}
+            </Text>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0c0032",
+    backgroundColor: theme.colors.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#0c0032",
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: theme.colors.background,
   },
   loadingText: {
-    color: "#fff",
+    color: theme.colors.textPrimary,
     marginTop: 10,
     fontSize: 16,
   },
@@ -265,129 +357,182 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(12, 0, 50, 0.6)",
+    // Gradiente para escurecer a imagem e manter o fundo escuro
+    backgroundColor: "rgba(15, 23, 42, 0.4)", // theme.colors.background com transparência
     justifyContent: "flex-end",
-    padding: 20,
+    padding: theme.spacing.lg,
   },
   backBtn: {
     position: "absolute",
-    top: 50,
-    left: 20,
+    top: theme.spacing.lg,
+    left: theme.spacing.md,
     backgroundColor: "rgba(0,0,0,0.4)",
-    borderRadius: 20,
-    padding: 8,
+    borderRadius: theme.borderRadius.full,
+    padding: theme.spacing.sm,
+    zIndex: 10,
   },
   title: {
-    color: "#fff",
-    fontSize: 28,
+    color: theme.colors.white,
+    fontSize: 26,
     fontWeight: "bold",
-    marginBottom: 5,
+    marginBottom: theme.spacing.xs,
   },
   city: {
-    color: "#ccc",
-    fontSize: 16,
+    color: theme.colors.textSecondary,
+    fontSize: 14,
   },
   contentContainer: {
-    paddingHorizontal: 20,
-    marginTop: -40,
+    paddingHorizontal: theme.spacing.md,
+    marginTop: -theme.spacing.lg, // Puxa o conteúdo para cima da imagem de capa
   },
   tabs: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: "#14004a",
-    borderRadius: 30,
-    padding: 5,
-    marginBottom: 20,
+    backgroundColor: theme.colors.backgroundSecondary, // Cor de fundo das tabs
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   tab: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 30,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
   },
   tabActive: {
-    backgroundColor: "#FF3A5C",
+    backgroundColor: theme.colors.primary,
   },
   tabText: {
-    color: "#ccc",
+    color: theme.colors.textSecondary,
     fontWeight: "600",
+    fontSize: 15,
   },
   tabActiveText: {
-    color: "#fff",
+    color: theme.colors.white,
     fontWeight: "bold",
+    fontSize: 15,
   },
   card: {
-    backgroundColor: "#14004a",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
   },
   descriptionCard: {
-    backgroundColor: "#14004a",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 80,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    marginBottom: 80, // Espaço para a TabBar inferior (se houver)
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   infoText: {
-    color: "#fff",
-    marginLeft: 12,
+    color: theme.colors.textPrimary,
+    marginLeft: theme.spacing.md,
+    fontSize: 15,
+    flexShrink: 1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors.surface,
+    marginVertical: theme.spacing.md,
+  },
+  organizadorTitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    marginBottom: theme.spacing.xs,
+  },
+  organizadorText: {
+    color: theme.colors.textPrimary,
     fontSize: 16,
+    fontWeight: "600",
   },
   descTitle: {
-    color: "#fff",
+    color: theme.colors.white,
     fontWeight: "bold",
     fontSize: 18,
-    marginBottom: 10,
+    marginBottom: theme.spacing.sm,
   },
   desc: {
-    color: "#ccc",
+    color: theme.colors.textSecondary,
     fontSize: 14,
     lineHeight: 22,
   },
   emptyStateText: {
-    color: "#aaa",
+    color: theme.colors.textSecondary,
     textAlign: "center",
-    paddingVertical: 20,
+    paddingVertical: theme.spacing.lg,
+    fontSize: 15,
   },
+  botaoCriarIngresso: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    marginTop: theme.spacing.md,
+    alignSelf: 'center'
+  },
+  botaoCriarIngressoTexto: {
+    color: theme.colors.white,
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
   // GALERIA
   galleryContainer: {
-    marginBottom: 20,
+    marginBottom: theme.spacing.lg,
   },
   galleryRow: {
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: theme.spacing.sm,
   },
   galleryImage: {
-    width: "48%", // 2 colunas com um pequeno espaço entre elas
+    width: "48.5%", // 2 colunas com espaço
     height: 150,
-    borderRadius: 15,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface, // Placeholder
   },
+
   // INGRESSOS
   ingressoCardsContainer: {
-    marginBottom: 20,
+    marginBottom: theme.spacing.lg,
   },
   ingressoCard: {
-    backgroundColor: "#14004a",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.secondary, // Detalhe de cor no card
   },
   ingressoHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: theme.spacing.md,
   },
   ingressoTitulo: {
-    color: "#fff",
+    color: theme.colors.white,
     fontSize: 20,
     fontWeight: "bold",
     flex: 1,
+  },
+  editButton: {
+    padding: theme.spacing.sm,
+    backgroundColor: theme.colors.primaryDark,
+    borderRadius: theme.borderRadius.sm,
   },
   ingressoDetails: {
     flexDirection: "row",
@@ -396,15 +541,18 @@ const styles = StyleSheet.create({
   ingressoDetailItem: {
     flex: 1,
     alignItems: "center",
+    paddingHorizontal: theme.spacing.xs,
   },
   ingressoDetailTitle: {
-    color: "#ccc",
+    color: theme.colors.textSecondary,
     fontSize: 12,
-    marginBottom: 5,
+    marginBottom: theme.spacing.xs,
+    textAlign: "center",
   },
   ingressoDetailText: {
-    color: "#fff",
+    color: theme.colors.white,
     fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
 });

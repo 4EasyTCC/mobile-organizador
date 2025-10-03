@@ -7,10 +7,46 @@ import {
   ScrollView,
   Alert,
   Image,
+  StyleSheet,
+  StatusBar,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+// Definição do tema para consistência
+const theme = {
+  colors: {
+    primary: "#6366F1", // Indigo
+    primaryDark: "#4F46E5",
+    secondary: "#8B5CF6", // Violet/Fuchsia-ish
+    background: "#0F172A", // Dark Blue/Slate
+    backgroundSecondary: "#1E293B", // Slightly lighter Dark Blue/Slate
+    surface: "#334155", // Even lighter Slate
+    white: "#FFFFFF",
+    textPrimary: "#F1F5F9", // Off-white
+    textSecondary: "#94A3B8", // Light Slate/Gray
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 9999,
+  },
+};
 
 export default function Etapa1({ navigation }) {
   const [evento, setEvento] = useState({
@@ -23,93 +59,98 @@ export default function Etapa1({ navigation }) {
   });
 
   const tiposEvento = [
-    "Festa",
-    "Conferência",
-    "Workshop",
-    "Encontro",
-    "Lançamento",
+    "Arte, Cultura e Lazer",
+    "Congressos e Palestras",
+    "Cursos e Workshops",
+    "Esporte",
+    "Festas e Shows",
+    "Gastronomia",
+    "Games e Geek",
+    "Grátis",
+    "Infantil",
+    "Moda e Beleza",
+    "Passeios e Tours",
+    "Religião e Espiritualidade",
+    "Saúde e Bem-Estar",
+    "Teatros e Espetáculos",
   ];
   const opcoesPrivacidade = ["Público", "Privado"];
 
+  // Componente SelectInput refatorado para o Dark Theme
   const SelectInput = ({ title, value, options, onSelect, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
-      <View style={{ marginBottom: 24 }}>
-        <Text
-          style={{
-            fontSize: 15,
-            color: "#1a1a2e",
-            marginBottom: 10,
-            fontWeight: "600",
-            letterSpacing: 0.3,
-          }}
-        >
-          {title}
-        </Text>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>{title}</Text>
         <TouchableOpacity
-          style={{
-            backgroundColor: "#ffffff",
-            padding: 18,
-            borderRadius: 16,
-            borderWidth: 2,
-            borderColor: isOpen ? "#1400b4" : "#e8e8f0",
-            shadowColor: "#1400b4",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-            elevation: 3,
-          }}
+          style={[
+            styles.selectField,
+            { borderColor: isOpen ? theme.colors.primary : theme.colors.surface },
+          ]}
           onPress={() => setIsOpen(!isOpen)}
         >
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontSize: 16, color: value ? "#1400b4" : "#a0a0b8", fontWeight: value ? "500" : "400" }}>
+          <View style={styles.selectFieldContent}>
+            <Text
+              style={[
+                styles.selectText,
+                { color: value ? theme.colors.textPrimary : theme.colors.textSecondary },
+              ]}
+            >
               {value || placeholder}
             </Text>
-            <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={20} color="#1400b4" />
+            <Ionicons
+              name={isOpen ? "chevron-up" : "chevron-down"}
+              size={20}
+              color={theme.colors.primary}
+            />
           </View>
         </TouchableOpacity>
 
         {isOpen && (
-          <View
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: 16,
-              marginTop: 8,
-              borderWidth: 2,
-              borderColor: "#e8e8f0",
-              overflow: "hidden",
-              shadowColor: "#1400b4",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.12,
-              shadowRadius: 12,
-              elevation: 5,
-            }}
-          >
-            {options.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => {
-                  onSelect(option);
-                  setIsOpen(false);
-                }}
-                style={{
-                  padding: 18,
-                  borderBottomWidth: index < options.length - 1 ? 1 : 0,
-                  borderBottomColor: "#f0f0f5",
-                  backgroundColor: value === option ? "#f0edff" : "#ffffff",
-                }}
-              >
-                <Text style={{ fontSize: 16, color: "#1400b4", fontWeight: value === option ? "600" : "400" }}>
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.selectOptionsContainer}>
+            <ScrollView style={{ maxHeight: 200 }}>
+              {options.map((option, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    onSelect(option);
+                    setIsOpen(false);
+                  }}
+                  style={[
+                    styles.selectOptionItem,
+                    {
+                      borderBottomWidth: index < options.length - 1 ? 1 : 0,
+                      backgroundColor:
+                        value === option
+                          ? theme.colors.surface
+                          : theme.colors.backgroundSecondary,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.selectOptionText,
+                      {
+                        fontWeight: value === option ? "600" : "400",
+                        color:
+                          value === option
+                            ? theme.colors.primary
+                            : theme.colors.textPrimary,
+                      },
+                    ]}
+                  >
+                    {option}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         )}
       </View>
     );
   };
 
+  // Componente DateTimeInput refatorado para o Dark Theme
   const DateTimeInput = ({ title, date, onChangeDate }) => {
     const [showPicker, setShowPicker] = useState(false);
     const [mode, setMode] = useState("date");
@@ -129,7 +170,7 @@ export default function Etapa1({ navigation }) {
     const formatDate = (date) => {
       return date.toLocaleDateString("pt-BR", {
         day: "2-digit",
-        month: "long",
+        month: "short",
         year: "numeric",
       });
     };
@@ -142,70 +183,38 @@ export default function Etapa1({ navigation }) {
     };
 
     return (
-      <View style={{ marginBottom: 24 }}>
-        <Text
-          style={{
-            fontSize: 15,
-            color: "#1a1a2e",
-            marginBottom: 10,
-            fontWeight: "600",
-            letterSpacing: 0.3,
-          }}
-        >
-          {title}
-        </Text>
-        <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>{title}</Text>
+        <View style={styles.dateTimeRow}>
+          {/* Botão de Data */}
           <TouchableOpacity
-            style={{
-              backgroundColor: "#ffffff",
-              padding: 18,
-              borderRadius: 16,
-              borderWidth: 2,
-              borderColor: "#e8e8f0",
-              flex: 1,
-              shadowColor: "#1400b4",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
+            style={styles.dateTimeButton}
             onPress={() => showMode("date")}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={styles.dateTimeButtonContent}>
               <View>
-                <Text style={{ fontSize: 12, color: "#7575a3", marginBottom: 4 }}>Data</Text>
-                <Text style={{ fontSize: 15, color: "#1400b4", fontWeight: "600" }}>
+                <Text style={styles.dateTimeLabel}>Data</Text>
+                <Text style={styles.dateTimeValue}>
                   {formatDate(date)}
                 </Text>
               </View>
-              <Ionicons name="calendar-outline" size={22} color="#1400b4" />
+              <Ionicons name="calendar-outline" size={22} color={theme.colors.primary} />
             </View>
           </TouchableOpacity>
-          
+
+          {/* Botão de Hora */}
           <TouchableOpacity
-            style={{
-              backgroundColor: "#ffffff",
-              padding: 18,
-              borderRadius: 16,
-              borderWidth: 2,
-              borderColor: "#e8e8f0",
-              width: 120,
-              shadowColor: "#1400b4",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
+            style={[styles.dateTimeButton, styles.timeButton]}
             onPress={() => showMode("time")}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={styles.dateTimeButtonContent}>
               <View>
-                <Text style={{ fontSize: 12, color: "#7575a3", marginBottom: 4 }}>Hora</Text>
-                <Text style={{ fontSize: 15, color: "#1400b4", fontWeight: "600" }}>
+                <Text style={styles.dateTimeLabel}>Hora</Text>
+                <Text style={styles.dateTimeValue}>
                   {formatTime(date)}
                 </Text>
               </View>
-              <Ionicons name="time-outline" size={22} color="#1400b4" />
+              <Ionicons name="time-outline" size={22} color={theme.colors.primary} />
             </View>
           </TouchableOpacity>
         </View>
@@ -231,168 +240,94 @@ export default function Etapa1({ navigation }) {
       Alert.alert("Atenção", "Preencha todos os campos obrigatórios");
       return;
     }
+    
+    if (evento.dataInicio >= evento.dataFim) {
+        Alert.alert("Atenção", "A Data/Hora de Início deve ser anterior à Data/Hora de Término.");
+        return;
+    }
 
-    try {
-      await AsyncStorage.setItem("@evento", JSON.stringify(evento));
-      navigation.navigate("Etapa2");
-    } catch (error) {
+    // --- CORREÇÃO DE DATA APLICADA AQUI ---
+  if (evento.dataInicio >= evento.dataFim) {
+    Alert.alert("Atenção", "A Data/Hora de Início deve ser anterior à Data/Hora de Término.");
+    return;
+  }
+
+  // CORREÇÃO: Converter objetos Date para string ISO 8601
+  const dadosParaSalvar = {
+    ...evento,
+    dataInicio: evento.dataInicio.toISOString(),
+    dataFim: evento.dataFim.toISOString(), // Garante a conversão
+  };
+
+  try {
+    await AsyncStorage.setItem("@evento", JSON.stringify(dadosParaSalvar));
+    navigation.navigate("Etapa2");
+  } catch (error) {
       console.error("Erro ao salvar dados da Etapa 1:", error);
       Alert.alert("Erro", "Não foi possível salvar os dados");
     }
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#1400b4" }}>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingTop: 60,
-          paddingBottom: 20,
-          paddingHorizontal: 24,
-        }}
-      >
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.colors.background}
+      />
+      <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={{ 
-            marginRight: 20,
-            backgroundColor: "rgba(255,255,255,0.2)",
-            padding: 10,
-            borderRadius: 12,
-          }}
+          style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
         </TouchableOpacity>
         <Image
           source={require("../imagens/branca.png")}
-          style={{ width: 250, height: 100, resizeMode: "contain" }}
+          style={styles.logo}
+          resizeMode="contain"
         />
       </View>
 
       <ScrollView
-        contentContainerStyle={{
-          backgroundColor: "#f8f9fd",
-          borderTopLeftRadius: 32,
-          borderTopRightRadius: 32,
-          padding: 24,
-          paddingBottom: 40,
-          flexGrow: 1,
-        }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ 
-          backgroundColor: "#1400b4",
-          paddingVertical: 12,
-          paddingHorizontal: 20,
-          borderRadius: 20,
-          marginBottom: 28,
-          alignSelf: "flex-start",
-        }}>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "700",
-              color: "#ffffff",
-              letterSpacing: 1,
-            }}
-          >
-            ETAPA 1 DE 5
-          </Text>
+        {/* Etapa Badge */}
+        <View style={styles.badgeContainer}>
+          <Text style={styles.badgeText}>ETAPA 1 DE 5</Text>
         </View>
 
-        <Text
-          style={{
-            fontSize: 26,
-            fontWeight: "800",
-            color: "#1a1a2e",
-            marginBottom: 8,
-          }}
-        >
-          Informações do Evento
-        </Text>
-        
-        <Text
-          style={{
-            fontSize: 15,
-            color: "#7575a3",
-            marginBottom: 32,
-            lineHeight: 22,
-          }}
-        >
+        <Text style={styles.title}>Informações do Evento</Text>
+        <Text style={styles.subtitle}>
           Preencha os detalhes básicos para começar a criar seu evento
         </Text>
 
-        <View style={{ marginBottom: 24 }}>
-          <Text
-            style={{
-              fontSize: 15,
-              color: "#1a1a2e",
-              marginBottom: 10,
-              fontWeight: "600",
-              letterSpacing: 0.3,
-            }}
-          >
-            Nome do Evento
-          </Text>
+        {/* Nome do Evento */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Nome do Evento</Text>
           <TextInput
-            style={{
-              backgroundColor: "#ffffff",
-              color: "#1a1a2e",
-              fontSize: 16,
-              padding: 18,
-              borderRadius: 16,
-              borderWidth: 2,
-              borderColor: "#e8e8f0",
-              shadowColor: "#1400b4",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
+            style={styles.textInput}
             placeholder="Ex: Festival de Música 2025"
-            placeholderTextColor="#a0a0b8"
+            placeholderTextColor={theme.colors.textSecondary}
             value={evento.nome}
             onChangeText={(texto) => setEvento({ ...evento, nome: texto })}
           />
         </View>
 
-        <View style={{ marginBottom: 24 }}>
-          <Text
-            style={{
-              fontSize: 15,
-              color: "#1a1a2e",
-              marginBottom: 10,
-              fontWeight: "600",
-              letterSpacing: 0.3,
-            }}
-          >
-            Descrição
-          </Text>
+        {/* Descrição */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Descrição</Text>
           <TextInput
-            style={{
-              backgroundColor: "#ffffff",
-              color: "#1a1a2e",
-              fontSize: 16,
-              padding: 18,
-              borderRadius: 16,
-              borderWidth: 2,
-              borderColor: "#e8e8f0",
-              height: 120,
-              textAlignVertical: "top",
-              shadowColor: "#1400b4",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
+            style={[styles.textInput, styles.textArea]}
             placeholder="Conte aos participantes sobre seu evento..."
-            placeholderTextColor="#a0a0b8"
+            placeholderTextColor={theme.colors.textSecondary}
             value={evento.descricao}
             onChangeText={(texto) => setEvento({ ...evento, descricao: texto })}
             multiline
           />
         </View>
 
+        {/* Tipo do Evento */}
         <SelectInput
           title="Tipo do Evento"
           value={evento.tipo}
@@ -401,6 +336,7 @@ export default function Etapa1({ navigation }) {
           placeholder="Selecione o tipo"
         />
 
+        {/* Privacidade */}
         <SelectInput
           title="Privacidade do Evento"
           value={evento.privacidade}
@@ -409,6 +345,7 @@ export default function Etapa1({ navigation }) {
           placeholder="Selecione"
         />
 
+        {/* Data/Hora de Início */}
         <DateTimeInput
           title="Data e Hora de Início"
           date={evento.dataInicio}
@@ -417,6 +354,7 @@ export default function Etapa1({ navigation }) {
           }
         />
 
+        {/* Data/Hora de Término */}
         <DateTimeInput
           title="Data e Hora de Término"
           date={evento.dataFim}
@@ -425,29 +363,205 @@ export default function Etapa1({ navigation }) {
           }
         />
 
-        <TouchableOpacity
-          style={{
-            backgroundColor: "#1400b4",
-            padding: 20,
-            borderRadius: 18,
-            marginTop: 40,
-            alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "row",
-            shadowColor: "#1400b4",
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.3,
-            shadowRadius: 16,
-            elevation: 8,
-          }}
-          onPress={avancar}
-        >
-          <Text style={{ color: "#ffffff", fontSize: 18, fontWeight: "700", marginRight: 8 }}>
-            Continuar
-          </Text>
-          <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+        {/* Botão Avançar */}
+        <TouchableOpacity style={styles.continueButton} onPress={avancar}>
+          <LinearGradient
+            colors={[theme.colors.primary, theme.colors.secondary]}
+            style={styles.continueButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={styles.continueButtonText}>Continuar</Text>
+            <Feather name="arrow-right" size={20} color={theme.colors.white} />
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.surface,
+  },
+  backButton: {
+    marginRight: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+  },
+  logo: {
+    width: 150,
+    height: 50,
+  },
+  scrollContent: {
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.lg,
+    paddingBottom: 80, // Espaço extra para o botão de continuar
+    flexGrow: 1,
+  },
+  badgeContainer: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.xl,
+    alignSelf: "flex-start",
+  },
+  badgeText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: theme.colors.white,
+    letterSpacing: 1,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: theme.colors.white,
+    marginBottom: theme.spacing.xs,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xl,
+    lineHeight: 22,
+  },
+  inputContainer: {
+    marginBottom: theme.spacing.lg,
+  },
+  inputLabel: {
+    fontSize: 15,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.sm,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+  },
+  textInput: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
+    // Sombra sutil para dark mode
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  textArea: {
+    height: 120,
+    textAlignVertical: "top",
+  },
+  // SelectInput Styles
+  selectField: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  selectFieldContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  selectText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  selectOptionsContainer: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderRadius: theme.borderRadius.lg,
+    marginTop: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
+    overflow: "hidden",
+    elevation: 5,
+  },
+  selectOptionItem: {
+    padding: theme.spacing.md,
+    borderBottomColor: theme.colors.surface,
+  },
+  selectOptionText: {
+    fontSize: 16,
+  },
+  // DateTimeInput Styles
+  dateTimeRow: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+  },
+  dateTimeButton: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.surface,
+    flex: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  dateTimeButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dateTimeLabel: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  },
+  dateTimeValue: {
+    fontSize: 15,
+    color: theme.colors.textPrimary,
+    fontWeight: "600",
+  },
+  timeButton: {
+    width: 130, // Largura fixa para o botão de hora
+    flex: 0,
+  },
+  // Continue Button
+  continueButton: {
+    borderRadius: theme.borderRadius.xl,
+    marginTop: theme.spacing.xl,
+    overflow: "hidden",
+    // Sombra para o botão gradiente
+    shadowColor: theme.colors.primaryDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  continueButtonGradient: {
+    padding: theme.spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+  },
+  continueButtonText: {
+    color: theme.colors.white,
+    fontSize: 18,
+    fontWeight: "700",
+    marginRight: theme.spacing.sm,
+  },
+});
