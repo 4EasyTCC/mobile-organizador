@@ -12,6 +12,8 @@ import Etapa5 from "../screens/Etapa5";
 import EventDetails from "../screens/EventDetails";
 import Perfil from "../screens/Perfil";
 import GruposScreen from "../screens/GruposScreen";
+import Estatisticas from "../screens/Estatisticas";
+
 const Stack = createStackNavigator();
 
 const RootNavigator = () => {
@@ -19,7 +21,7 @@ const RootNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="Login"
+        initialRouteName="Estatisticas"
       >
         <Stack.Screen name="Login" component={Login}></Stack.Screen>
         <Stack.Screen name="EventDetails" component={EventDetails} />
@@ -49,7 +51,9 @@ const RootNavigator = () => {
         <Stack.Screen name="Etapa3" component={Etapa3}></Stack.Screen>
         <Stack.Screen name="Etapa4" component={Etapa4}></Stack.Screen>
         <Stack.Screen name="Etapa5" component={Etapa5}></Stack.Screen>
+                <Stack.Screen name="Estatisticas" component={Estatisticas}></Stack.Screen>
         <Stack.Screen
+        
           name="GruposScreen"
           component={GruposScreen}
         ></Stack.Screen>
