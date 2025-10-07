@@ -281,11 +281,7 @@ export default function Etapa1({ navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
         </TouchableOpacity>
-        <Image
-          source={require("../imagens/branca.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+      
       </View>
 
       <ScrollView
