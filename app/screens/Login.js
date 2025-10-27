@@ -69,18 +69,7 @@ export default function Login() {
       JSON.stringify(resposta.data.organizador)
     );
   }
-      Alert.alert(
-        "Sucesso",
-        modo === "login"
-          ? "Login realizado com sucesso!"
-          : "Cadastro realizado com sucesso!",
-        [
-          {
-            text: "OK",
-            onPress: () => navigation.navigate("Home"),
-          },
-        ]
-      );
+     navigation.navigate("Home");
     } catch (error) {
       let errorMessage = "Erro na requisição";
 

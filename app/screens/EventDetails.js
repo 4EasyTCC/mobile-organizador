@@ -18,7 +18,7 @@ import { API_URL } from "@env";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Definição do tema (copiado do arquivo de GruposScreen/HomeScreen)
+// Definição do tema
 const theme = {
   colors: {
     primary: "#6366F1", // Indigo
@@ -64,7 +64,6 @@ export default function EventDetails({ route, navigation }) {
     try {
       const token = await AsyncStorage.getItem("userToken");
       if (!token) {
-        // Redireciona para o login se não houver token
         navigation.navigate("Login");
         return;
       }
@@ -97,10 +96,8 @@ export default function EventDetails({ route, navigation }) {
       "Editar Ingresso",
       `Você clicou para editar o ingresso ${ingresso.nome}`
     );
-    // TODO: Implementar navegação ou modal para a tela de edição de ingresso
   };
 
-  // Funções de formatação (ajustadas para o contexto)
   const formatarData = (dataString) => {
     if (!dataString) return "Data não informada";
     try {
@@ -122,6 +119,21 @@ export default function EventDetails({ route, navigation }) {
     }
   };
 
+  // --- ADICIONADO ---
+  // Helper para capitalizar a primeira letra
+  const formatarStatus = (status) => {
+    if (!status) return "Não informado";
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
+  // Helper para escolher o ícone de privacidade
+  const getPrivacyIcon = (privacidade) => {
+    return privacidade === "Privado"
+      ? "lock-closed-outline"
+      : "lock-open-outline";
+  };
+  // --- FIM DA ADIÇÃO ---
+
   const renderInfoRow = (iconName, text) => (
     <View style={styles.infoRow}>
       <Ionicons name={iconName} size={20} color={theme.colors.primary} />
@@ -141,7 +153,7 @@ export default function EventDetails({ route, navigation }) {
           : "Endereço não informado";
 
         return (
-          <View style={styles.card}>
+          <View style={styles.tabContentContainer}>
             {renderInfoRow("location-outline", enderecoCompleto)}
             {renderInfoRow(
               "calendar-outline",
@@ -153,11 +165,35 @@ export default function EventDetails({ route, navigation }) {
                 eventoDetalhes.dataFim
               )}`
             )}
+
+            {/* --- CAMPOS ADICIONADOS --- */}
+            <View style={styles.divider} />
+            {renderInfoRow(
+              "pricetag-outline",
+              eventoDetalhes.categoria || "Sem categoria"
+            )}
+            {renderInfoRow(
+              getPrivacyIcon(eventoDetalhes.privacidadeEvento),
+              eventoDetalhes.privacidadeEvento || "Não informado"
+            )}
+            {renderInfoRow(
+              "information-circle-outline",
+              `Status: ${formatarStatus(eventoDetalhes.statusEvento)}`
+            )}
+            {/* --- FIM DA ADIÇÃO --- */}
+
             <View style={styles.divider} />
             <Text style={styles.organizadorTitle}>Organizador</Text>
             <Text style={styles.organizadorText}>
               {eventoDetalhes.organizador?.nome || "Organizador desconhecido"}
             </Text>
+
+            <View style={styles.descriptionContainer}>
+              <Text style={styles.descTitle}>Descrição do Evento</Text>
+              <Text style={styles.desc}>
+                {eventoDetalhes.descEvento || "Nenhuma descrição fornecida."}
+              </Text>
+            </View>
           </View>
         );
 
@@ -181,7 +217,7 @@ export default function EventDetails({ route, navigation }) {
                 columnWrapperStyle={styles.galleryRow}
               />
             ) : (
-              <View style={styles.card}>
+              <View style={styles.emptyStateContainer}>
                 <Text style={styles.emptyStateText}>
                   Nenhuma foto na galeria.
                 </Text>
@@ -202,7 +238,11 @@ export default function EventDetails({ route, navigation }) {
                       onPress={() => handleEditIngresso(ing)}
                       style={styles.editButton}
                     >
-                      <Feather name="edit-3" size={20} color={theme.colors.white} />
+                      <Feather
+                        name="edit-3"
+                        size={20}
+                        color={theme.colors.white}
+                      />
                     </TouchableOpacity>
                   </View>
                   <View style={styles.ingressoDetails}>
@@ -232,7 +272,7 @@ export default function EventDetails({ route, navigation }) {
                 </View>
               ))
             ) : (
-              <View style={styles.card}>
+              <View style={styles.emptyStateContainer}>
                 <Text style={styles.emptyStateText}>
                   Nenhum ingresso disponível.
                 </Text>
@@ -267,7 +307,7 @@ export default function EventDetails({ route, navigation }) {
   );
   const capaSource = imagemCapa
     ? { uri: `${API_URL}${imagemCapa.url}` }
-    : require("../imagens/roxa.png"); // Use a mesma imagem de fallback
+    : require("../imagens/roxa.png");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -321,13 +361,6 @@ export default function EventDetails({ route, navigation }) {
           </View>
 
           {renderTabContent()}
-
-          <View style={styles.descriptionCard}>
-            <Text style={styles.descTitle}>Descrição do Evento</Text>
-            <Text style={styles.desc}>
-              {eventoDetalhes.descEvento || "Nenhuma descrição fornecida."}
-            </Text>
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -357,8 +390,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    // Gradiente para escurecer a imagem e manter o fundo escuro
-    backgroundColor: "rgba(15, 23, 42, 0.4)", // theme.colors.background com transparência
+    backgroundColor: "rgba(15, 23, 42, 0.4)",
     justifyContent: "flex-end",
     padding: theme.spacing.lg,
   },
@@ -383,55 +415,41 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: theme.spacing.md,
-    marginTop: -theme.spacing.lg, // Puxa o conteúdo para cima da imagem de capa
+    marginTop: -theme.spacing.lg,
+    paddingBottom: 80,
   },
   tabs: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    backgroundColor: theme.colors.backgroundSecondary, // Cor de fundo das tabs
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.sm,
+    justifyContent: "flex-start",
     marginBottom: theme.spacing.lg,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   tab: {
-    flex: 1,
+    flex: 0,
     alignItems: "center",
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    marginRight: theme.spacing.lg,
+    borderBottomWidth: 3,
+    borderBottomColor: "transparent",
   },
   tabActive: {
-    backgroundColor: theme.colors.primary,
+    borderBottomColor: theme.colors.primary,
   },
   tabText: {
     color: theme.colors.textSecondary,
     fontWeight: "600",
-    fontSize: 15,
+    fontSize: 16,
   },
   tabActiveText: {
-    color: theme.colors.white,
+    color: theme.colors.primary,
     fontWeight: "bold",
-    fontSize: 15,
+    fontSize: 16,
   },
-  card: {
-    backgroundColor: theme.colors.backgroundSecondary,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.surface,
+  tabContentContainer: {
+    paddingBottom: theme.spacing.lg,
   },
-  descriptionCard: {
-    backgroundColor: theme.colors.backgroundSecondary,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.lg,
-    marginBottom: 80, // Espaço para a TabBar inferior (se houver)
-    borderWidth: 1,
-    borderColor: theme.colors.surface,
+  descriptionContainer: {
+    marginTop: theme.spacing.lg,
   },
   infoRow: {
     flexDirection: "row",
@@ -470,10 +488,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
   },
+  emptyStateContainer: {
+    paddingVertical: theme.spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   emptyStateText: {
     color: theme.colors.textSecondary,
     textAlign: "center",
-    paddingVertical: theme.spacing.lg,
     fontSize: 15,
   },
   botaoCriarIngresso: {
@@ -482,40 +504,36 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: theme.borderRadius.md,
     marginTop: theme.spacing.md,
-    alignSelf: 'center'
+    alignSelf: "center",
   },
   botaoCriarIngressoTexto: {
     color: theme.colors.white,
     fontWeight: "bold",
     fontSize: 16,
   },
-
-  // GALERIA
   galleryContainer: {
     marginBottom: theme.spacing.lg,
+    minHeight: 100,
   },
   galleryRow: {
     justifyContent: "space-between",
     marginBottom: theme.spacing.sm,
   },
   galleryImage: {
-    width: "48.5%", // 2 colunas com espaço
+    width: "48.5%",
     height: 150,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.surface, // Placeholder
+    backgroundColor: theme.colors.surface,
   },
-
-  // INGRESSOS
   ingressoCardsContainer: {
     marginBottom: theme.spacing.lg,
+    minHeight: 100,
   },
   ingressoCard: {
     backgroundColor: theme.colors.backgroundSecondary,
     borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.md,
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.secondary, // Detalhe de cor no card
   },
   ingressoHeader: {
     flexDirection: "row",
